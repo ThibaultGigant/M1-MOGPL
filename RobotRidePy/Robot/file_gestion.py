@@ -1,4 +1,5 @@
 from Robot.classes import *
+import time
 """
 
 """
@@ -10,15 +11,18 @@ def lecture(fichier_entree, fichier_sortie):
 
     ligne = fp.readline()
     while ligne:
-        nb_lignes, nb_colonnes = ligne.split()
-        nb_lignes = int(nb_lignes)
-        nb_colonnes = int(nb_colonnes)
+        t1 = time.time()
+        nb_lignes, nb_colonnes = map(int, ligne.split())  # Récupération du nombre de lignes et de colonnes
         lignes = []
         for i in range(nb_lignes):
             lignes.append(fp.readline().split())
         graphe = Graph(nb_lignes, nb_colonnes, lignes)
+        t2 = time.time()
+        print("Tremps pris pour la création du graphe : ", t2-t1)
         robot = Robot(fp.readline().split(), graphe)
         fo.write(robot.affiche_resultat())
+        print("Temps de calcul: ", time.time()-t2, " secondes")
+        print("Temps total : ", time.time()-t1)
         ligne = fp.readline()
         if ligne == "0 0":
             break

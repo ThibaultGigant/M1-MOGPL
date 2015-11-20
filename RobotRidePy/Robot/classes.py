@@ -47,13 +47,13 @@ class Node:
             print(n.x, n.y, n.orientation)
             if n.pere.x == n.x and n.pere.y == n.y:
                 if ((n.orientation.value - n.pere.orientation.value) % 4) == 1:
-                    res += " D"
+                    res = " D" + res
                 else:
-                    res += " G"
+                    res = " G" + res
             elif n.pere.x == n.x:
-                res += (" a" + str(abs(n.pere.y - n.y)))
+                res = " a" + str(abs(n.pere.y - n.y)) + res
             else:
-                res += (" a" + str(abs(n.pere.x - n.x)))
+                res = " a" + str(abs(n.pere.x - n.x)) + res
             temps += 1
             n = n.pere
         return str(temps) + res
@@ -109,25 +109,23 @@ class Graph:
     def ajoute_premiere_ligne(self, nb_colonnes, lignes):
         # ajout premier élément
         if lignes[0][0] == '0':
-            self.sommets[(0, 0, Orientation.est)] = Node(0, 0, Orientation.est)
-            self.sommets[(0, 0, Orientation.sud)] = Node(0, 0, Orientation.sud)
+            for k in Orientation:
+                self.sommets[(0, 0, k)] = Node(0, 0, k)
         # ajout éléments intermédiaires
         for i in range(1, nb_colonnes):
             if lignes[0][i] == '0' and (lignes[0][i-1]) == '0':
-                self.sommets[(0, i, Orientation.est)] = Node(0, i, Orientation.est)
-                self.sommets[(0, i, Orientation.sud)] = Node(0, i, Orientation.sud)
-                self.sommets[(0, i, Orientation.ouest)] = Node(0, i, Orientation.ouest)
+                for k in Orientation:
+                    self.sommets[(0, i, k)] = Node(0, i, k)
         # ajout du dernier élément
         if lignes[0][-1] == '0':
-            self.sommets[(0, nb_colonnes, Orientation.sud)] = Node(0, nb_colonnes, Orientation.sud)
-            self.sommets[(0, nb_colonnes, Orientation.ouest)] = Node(0, nb_colonnes, Orientation.ouest)
+            for k in Orientation:
+                self.sommets[(0, nb_colonnes, k)] = Node(0, nb_colonnes, k)
 
     def ajoute_ligne_intermediaire(self, numero_ligne, nb_colonnes, lignes):
         # ajout premier élément
         if lignes[numero_ligne][0] == '0' and lignes[numero_ligne-1][0] == '0':
-            self.sommets[(numero_ligne, 0, Orientation.nord)] = Node(numero_ligne, 0, Orientation.nord)
-            self.sommets[(numero_ligne, 0, Orientation.sud)] = Node(numero_ligne, 0, Orientation.sud)
-            self.sommets[(numero_ligne, 0, Orientation.est)] = Node(numero_ligne, 0, Orientation.est)
+            for k in Orientation:
+                self.sommets[(numero_ligne, 0, k)] = Node(numero_ligne, 0, k)
         # ajout éléments intermédiaires
         for i in range(1, nb_colonnes):
             if lignes[numero_ligne-1][i-1] == '0' and lignes[numero_ligne][i-1] == '0' and lignes[numero_ligne-1][i] == '0' and lignes[numero_ligne][i] == '0':
@@ -135,25 +133,23 @@ class Graph:
                     self.sommets[(numero_ligne, i, k)] = Node(numero_ligne, i, k)
         # ajout du dernier élément
         if lignes[numero_ligne-1][-1] == '0' and lignes[numero_ligne][-1] == '0':
-            self.sommets[(numero_ligne, nb_colonnes, Orientation.nord)] = Node(numero_ligne, nb_colonnes, Orientation.nord)
-            self.sommets[(numero_ligne, nb_colonnes, Orientation.sud)] = Node(numero_ligne, nb_colonnes, Orientation.sud)
-            self.sommets[(numero_ligne, nb_colonnes, Orientation.ouest)] = Node(numero_ligne, nb_colonnes, Orientation.ouest)
+            for k in Orientation:
+                self.sommets[(numero_ligne, nb_colonnes, k)] = Node(numero_ligne, nb_colonnes, k)
 
     def ajoute_derniere_ligne(self, nb_lignes, nb_colonnes, lignes):
         # ajout premier élément
-        if lignes[nb_lignes-1][0] == '0':
-            self.sommets[(nb_lignes, 0, Orientation.nord)] = Node(nb_lignes, 0, Orientation.nord)
-            self.sommets[(nb_lignes, 0, Orientation.est)] = Node(nb_lignes, 0, Orientation.est)
+        if lignes[-1][0] == '0':
+            for k in Orientation:
+                self.sommets[(nb_lignes, 0, k)] = Node(nb_lignes, 0, k)
         # ajout des éléments intermédiaires
         for i in range(1, nb_colonnes):
-            if lignes[nb_lignes-1][i-1] == '0' and lignes[nb_lignes-1][i] == '0':
-                self.sommets[(nb_lignes, i, Orientation.nord)] = Node(nb_lignes, i, Orientation.nord)
-                self.sommets[(nb_lignes, i, Orientation.est)] = Node(nb_lignes, i, Orientation.est)
-                self.sommets[(nb_lignes, i, Orientation.ouest)] = Node(nb_lignes, i, Orientation.ouest)
+            if lignes[-1][i-1] == '0' and lignes[-1][i] == '0':
+                for k in Orientation:
+                    self.sommets[(nb_lignes, i, k)] = Node(nb_lignes, i, k)
         # ajout du dernier élément
         if lignes[-1][-1] == '0':
-            self.sommets[(nb_lignes, nb_colonnes, Orientation.nord)] = Node(nb_lignes, nb_colonnes, Orientation.nord)
-            self.sommets[(nb_lignes, nb_colonnes, Orientation.ouest)] = Node(nb_lignes, nb_colonnes, Orientation.ouest)
+            for k in Orientation:
+                self.sommets[(nb_lignes, nb_colonnes, k)] = Node(nb_lignes, nb_colonnes, k)
 
     def ajoute_arcs(self, nb_lignes, nb_colonnes):
         # On parcourt tous les noeuds du graphe pour ajouter leurs adjacents
@@ -167,6 +163,8 @@ class Graph:
                             noeud.ajoute_adjacent(n)
                         else:
                             break
+                    else:
+                        break
             elif noeud.orientation == Orientation.sud:
                 for i in range(1, 4):
                     if noeud.x+i <= nb_lignes:
@@ -175,6 +173,8 @@ class Graph:
                             noeud.ajoute_adjacent(n)
                         else:
                             break
+                    else:
+                        break
             elif noeud.orientation == Orientation.est:
                 for i in range(1, 4):
                     if noeud.y+i <= nb_colonnes:
@@ -183,14 +183,18 @@ class Graph:
                             noeud.ajoute_adjacent(n)
                         else:
                             break
+                    else:
+                        break
             elif noeud.orientation == Orientation.ouest:
                 for i in range(1, 4):
                     if noeud.y-i >= 0:
-                        n = self.get_sommet(noeud.x, noeud.y-i, Orientation)
+                        n = self.get_sommet(noeud.x, noeud.y-i, Orientation.ouest)
                         if n:
                             noeud.ajoute_adjacent(n)
                         else:
                             break
+                    else:
+                        break
             # ajout des arcs symbolisant les rotations du robot sur sa position actuelle
             n = self.get_sommet(noeud.x, noeud.y, Orientation((noeud.orientation.value+1) % 4))
             if n:
