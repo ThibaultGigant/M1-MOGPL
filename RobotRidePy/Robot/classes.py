@@ -28,13 +28,35 @@ class Node:
         self.orientation = orientation
         self.adjacents = []  # Donne tous les sommets adjacents à ce sommet,
         # c'est à dire les sommets que le robot peut atteindre en 1 seconde à partir de celui-ci
-        self.pere = -1  # Donne le père du noeud dans le chemin obtenu par le parcours en largeur
+        self.pere = None  # Donne le père du noeud dans le chemin obtenu par le parcours en largeur
 
     def ajoute_adjacent(self, sommet):
         self.adjacents.append(sommet)
 
     def set_pere(self, pere):
         self.pere = pere
+
+    def calculer_chemin(self):
+        temps = 0
+        res = ""
+        n = self
+        print("Entrée dans calculer_chemin : " + str(self))
+        if n.pere == None:
+            return "-1"
+        while n.pere != -1:
+            print(n.x, n.y, n.orientation)
+            if n.pere.x == n.x and n.pere.y == n.y:
+                if ((n.orientation.value - n.pere.orientation.value) % 4) == 1:
+                    res += " D"
+                else:
+                    res += " G"
+            elif n.pere.x == n.x:
+                res += (" a" + str(abs(n.pere.y - n.y)))
+            else:
+                res += (" a" + str(abs(n.pere.x - n.x)))
+            temps += 1
+            n = n.pere
+        return str(temps) + res
 
 
 class Graph:
@@ -43,56 +65,11 @@ class Graph:
     """
 
     def __init__(self, nb_lignes, nb_colonnes, lignes):
-        # Le buffer représente les lignes de 0 et 1 sous la forme d'une liste de listes
+        # "lignes" représente les lignes de 0 et 1 sous la forme d'une liste de listes
         # où chaque liste correspond à une ligne du fichier d'entrée
         self.sommets = {}  # Ensemble des sommets
         # les clés seront les tuples (x,y,orientation) et les valeurs le noeud correspondant
-        self.remplir_sommets(nb_lignes, nb_colonnes, lignes)
-
-    def remplir_sommets(self, nb_lignes, nb_colonnes, lignes):
-        """
-            Remplissage Complet du graphe lors de l'initialisation,
-            on supprimera les arcs inutilisables par le robot plus tard
-
-            :param nb_lignes: Nombre de lignes de 1m du dépôt
-            :param nb_colonnes: Nombres de colonnes de 1m du dépôt
-            :param lignes: liste de listes, chacune représentant une ligne du dépôt
-            :type nb_lignes: int
-            :type nb_colonnes: int
-            :type lignes: list
-        """
-
-    def ajoute_premiere_ligne(self, nb_lignes, nb_colonnes, lignes):
-        # ajout premier élément
-        if lignes[0][0] == '0':
-            for k in range(4):
-                self.sommets[(0, 0, Orientation(k))] = Node(0, 0, Orientation(k))
-        # ajout éléments intermédiaires
-        for i in range(1, nb_colonnes):
-            if lignes[0][i] == '0':
-                if (lignes[0][i-1]) == '0':
-                    self.sommets[(0, i, Orientation.ouest)] = Node(0,i,Orientation.ouest)
-                    if i < nb_colonnes-1:
-                        if lignes[0][i+1] == '0':
-                            self.sommets[(0, i, Orientation.est)] = Node(0,i, Orientation.est)
-                    else:
-                        self.sommets[(0, i, Orientation.est)] = Node(0,i, Orientation.est)
-                    if nb_lignes >= 2:
-                        if lignes[1][i-1] == '0' and lignes[1][i] == '0':
-                            self.sommets[(0, i, Orientation.sud)] = Node(0,i, Orientation.sud)
-        # ajout du dernier élément
-        if lignes[0][-1] == '0':
-            if nb_colonnes >= 2:
-                if lignes[0][-2] == '0':
-                    self.sommets[(0, nb_colonnes+1, Orientation.ouest)] = Node(0, nb_colonnes+1, Orientation.ouest)
-            else:
-                self.sommets[(0, nb_colonnes+1, Orientation.ouest)] = Node(0, nb_colonnes+1, Orientation.ouest)
-            if nb_lignes >= 2:
-                if lignes[1][nb_colonnes] == '0':
-                    self.sommets[(0, nb_colonnes+1, Orientation.sud)] = Node(0, nb_colonnes+1, Orientation.sud)
-            else:
-                self.sommets[(0, nb_colonnes+1, Orientation.sud)] = Node(0, nb_colonnes+1, Orientation.sud)
-
+        self.remplir_graphe(nb_lignes, nb_colonnes, lignes)
 
     def get_sommet(self, x, y, orientation):
         """
@@ -106,7 +83,121 @@ class Graph:
             :return: Sommet correspondant aux données
             :rtype: Node
         """
-        return self.sommets[(x, y, orientation)]
+        if (x, y, orientation) in self.sommets.keys():
+            return self.sommets[(x, y, orientation)]
+        else:
+            return None
+
+    def remplir_graphe(self, nb_lignes, nb_colonnes, lignes):
+        """
+            Remplissage Complet du graphe lors de l'initialisation,
+            on supprimera les arcs inutilisables par le robot plus tard
+
+            :param nb_lignes: Nombre de lignes de 1m du dépôt
+            :param nb_colonnes: Nombres de colonnes de 1m du dépôt
+            :param lignes: liste de listes, chacune représentant une ligne du dépôt
+            :type nb_lignes: int
+            :type nb_colonnes: int
+            :type lignes: list
+        """
+        self.ajoute_premiere_ligne(nb_colonnes, lignes)
+        for i in range(1, nb_lignes):
+            self.ajoute_ligne_intermediaire(i, nb_colonnes, lignes)
+        self.ajoute_derniere_ligne(nb_lignes, nb_colonnes, lignes)
+        self.ajoute_arcs(nb_lignes, nb_colonnes)
+
+    def ajoute_premiere_ligne(self, nb_colonnes, lignes):
+        # ajout premier élément
+        if lignes[0][0] == '0':
+            self.sommets[(0, 0, Orientation.est)] = Node(0, 0, Orientation.est)
+            self.sommets[(0, 0, Orientation.sud)] = Node(0, 0, Orientation.sud)
+        # ajout éléments intermédiaires
+        for i in range(1, nb_colonnes):
+            if lignes[0][i] == '0' and (lignes[0][i-1]) == '0':
+                self.sommets[(0, i, Orientation.est)] = Node(0, i, Orientation.est)
+                self.sommets[(0, i, Orientation.sud)] = Node(0, i, Orientation.sud)
+                self.sommets[(0, i, Orientation.ouest)] = Node(0, i, Orientation.ouest)
+        # ajout du dernier élément
+        if lignes[0][-1] == '0':
+            self.sommets[(0, nb_colonnes, Orientation.sud)] = Node(0, nb_colonnes, Orientation.sud)
+            self.sommets[(0, nb_colonnes, Orientation.ouest)] = Node(0, nb_colonnes, Orientation.ouest)
+
+    def ajoute_ligne_intermediaire(self, numero_ligne, nb_colonnes, lignes):
+        # ajout premier élément
+        if lignes[numero_ligne][0] == '0' and lignes[numero_ligne-1][0] == '0':
+            self.sommets[(numero_ligne, 0, Orientation.nord)] = Node(numero_ligne, 0, Orientation.nord)
+            self.sommets[(numero_ligne, 0, Orientation.sud)] = Node(numero_ligne, 0, Orientation.sud)
+            self.sommets[(numero_ligne, 0, Orientation.est)] = Node(numero_ligne, 0, Orientation.est)
+        # ajout éléments intermédiaires
+        for i in range(1, nb_colonnes):
+            if lignes[numero_ligne-1][i-1] == '0' and lignes[numero_ligne][i-1] == '0' and lignes[numero_ligne-1][i] == '0' and lignes[numero_ligne][i] == '0':
+                for k in Orientation:
+                    self.sommets[(numero_ligne, i, k)] = Node(numero_ligne, i, k)
+        # ajout du dernier élément
+        if lignes[numero_ligne-1][-1] == '0' and lignes[numero_ligne][-1] == '0':
+            self.sommets[(numero_ligne, nb_colonnes, Orientation.nord)] = Node(numero_ligne, nb_colonnes, Orientation.nord)
+            self.sommets[(numero_ligne, nb_colonnes, Orientation.sud)] = Node(numero_ligne, nb_colonnes, Orientation.sud)
+            self.sommets[(numero_ligne, nb_colonnes, Orientation.ouest)] = Node(numero_ligne, nb_colonnes, Orientation.ouest)
+
+    def ajoute_derniere_ligne(self, nb_lignes, nb_colonnes, lignes):
+        # ajout premier élément
+        if lignes[nb_lignes-1][0] == '0':
+            self.sommets[(nb_lignes, 0, Orientation.nord)] = Node(nb_lignes, 0, Orientation.nord)
+            self.sommets[(nb_lignes, 0, Orientation.est)] = Node(nb_lignes, 0, Orientation.est)
+        # ajout des éléments intermédiaires
+        for i in range(1, nb_colonnes):
+            if lignes[nb_lignes-1][i-1] == '0' and lignes[nb_lignes-1][i] == '0':
+                self.sommets[(nb_lignes, i, Orientation.nord)] = Node(nb_lignes, i, Orientation.nord)
+                self.sommets[(nb_lignes, i, Orientation.est)] = Node(nb_lignes, i, Orientation.est)
+                self.sommets[(nb_lignes, i, Orientation.ouest)] = Node(nb_lignes, i, Orientation.ouest)
+        # ajout du dernier élément
+        if lignes[-1][-1] == '0':
+            self.sommets[(nb_lignes, nb_colonnes, Orientation.nord)] = Node(nb_lignes, nb_colonnes, Orientation.nord)
+            self.sommets[(nb_lignes, nb_colonnes, Orientation.ouest)] = Node(nb_lignes, nb_colonnes, Orientation.ouest)
+
+    def ajoute_arcs(self, nb_lignes, nb_colonnes):
+        # On parcourt tous les noeuds du graphe pour ajouter leurs adjacents
+        for noeud in self.sommets.values():
+            # ajout des arcs symbolisant l'avancée du robot dans sa direction
+            if noeud.orientation == Orientation.nord:
+                for i in range(1, 4):
+                    if noeud.x-i >= 0:
+                        n = self.get_sommet(noeud.x-i, noeud.y, Orientation.nord)
+                        if n:
+                            noeud.ajoute_adjacent(n)
+                        else:
+                            break
+            elif noeud.orientation == Orientation.sud:
+                for i in range(1, 4):
+                    if noeud.x+i <= nb_lignes:
+                        n = self.get_sommet(noeud.x+i, noeud.y, Orientation.sud)
+                        if n:
+                            noeud.ajoute_adjacent(n)
+                        else:
+                            break
+            elif noeud.orientation == Orientation.est:
+                for i in range(1, 4):
+                    if noeud.y+i <= nb_colonnes:
+                        n = self.get_sommet(noeud.x, noeud.y+i, Orientation.est)
+                        if n:
+                            noeud.ajoute_adjacent(n)
+                        else:
+                            break
+            elif noeud.orientation == Orientation.ouest:
+                for i in range(1, 4):
+                    if noeud.y-i >= 0:
+                        n = self.get_sommet(noeud.x, noeud.y-i, Orientation)
+                        if n:
+                            noeud.ajoute_adjacent(n)
+                        else:
+                            break
+            # ajout des arcs symbolisant les rotations du robot sur sa position actuelle
+            n = self.get_sommet(noeud.x, noeud.y, Orientation((noeud.orientation.value+1) % 4))
+            if n:
+                noeud.ajoute_adjacent(n)
+            n = self.get_sommet(noeud.x, noeud.y, Orientation((noeud.orientation.value+3) % 4))
+            if n:
+                noeud.ajoute_adjacent(n)
 
 
 class Robot:
@@ -129,8 +220,28 @@ class Robot:
             exit(HelpMessage)
 
         self.depart = graphe.get_sommet(int(ligne[0]), int(ligne[1]), orientation)
+        self.depart.pere = -1
 
         self.arrivee = (int(ligne[2]), int(ligne[3]))  # En revanche ici, l'orientation n'est pas précisée
         self.graphe = graphe
-        self.visites = [self.depart]
-        self.depart.pere = None
+
+    def parcours_en_largeur(self):
+        ouverts = [self.depart]  # Représente les sommets ouverts
+        done = False
+        while ouverts and not(done):
+            noeud = ouverts.pop(0)
+            for i in noeud.adjacents:
+                if i.pere == None:
+                    i.pere = noeud
+                    ouverts.append(i)
+                    if (i.x, i.y) == self.arrivee:
+                        done = True
+                        break
+
+    def affiche_resultat(self):
+        self.parcours_en_largeur()
+        for i in Orientation:
+            n = self.graphe.get_sommet(self.arrivee[0], self.arrivee[1], i)
+            if n.pere:
+                break
+        return n.calculer_chemin()
