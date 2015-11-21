@@ -1,4 +1,4 @@
-from Robot.file_gestion import lecture
+from Interface.ihm import affichage_fenetre
 
 if __name__ == "__main__":
-    lecture("Instances/x9y10o10", "Instances/x9y10o10Out")
+    affichage_fenetre()
