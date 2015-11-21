@@ -1,3 +1,4 @@
-import Robot.file_gestion as fg
+from Robot.file_gestion import lecture
 
-fg.lecture("Instances/x9y10o10", "Instances/x9y10o10out")
+if __name__ == "__main__":
+    lecture("Instances/x9y10o10", "Instances/x9y10o10Out")

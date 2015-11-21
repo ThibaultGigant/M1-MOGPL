@@ -40,11 +40,9 @@ class Node:
         temps = 0
         res = ""
         n = self
-        print("Entrée dans calculer_chemin : " + str(self))
         if n.pere == None:
             return "-1"
         while n.pere != -1:
-            print(n.x, n.y, n.orientation)
             if n.pere.x == n.x and n.pere.y == n.y:
                 if ((n.orientation.value - n.pere.orientation.value) % 4) == 1:
                     res = " D" + res
@@ -70,6 +68,7 @@ class Graph:
         self.sommets = {}  # Ensemble des sommets
         # les clés seront les tuples (x,y,orientation) et les valeurs le noeud correspondant
         self.remplir_graphe(nb_lignes, nb_colonnes, lignes)
+        self.lignes = lignes
 
     def get_sommet(self, x, y, orientation):
         """
@@ -203,6 +202,18 @@ class Graph:
             if n:
                 noeud.ajoute_adjacent(n)
 
+    def affiche_graphe(self):
+        sep = "—" * (len(self.lignes[0]) * 2 + 1)
+        for ligne in self.lignes:
+            print(sep)
+            for j in ligne:
+                if j == "0":
+                    print("|O", end="")
+                else:
+                    print("|X", end="")
+            print("|")
+        print(sep)
+
 
 class Robot:
     """
@@ -232,10 +243,10 @@ class Robot:
     def parcours_en_largeur(self):
         ouverts = [self.depart]  # Représente les sommets ouverts
         done = False
-        while ouverts and not(done):
+        while ouverts and not done:
             noeud = ouverts.pop(0)
             for i in noeud.adjacents:
-                if i.pere == None:
+                if i.pere is None:
                     i.pere = noeud
                     ouverts.append(i)
                     if (i.x, i.y) == self.arrivee:
