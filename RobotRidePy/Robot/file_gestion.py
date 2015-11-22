@@ -32,7 +32,11 @@ def lecture(fichier_entree, fichier_sortie):
 
     fp.close()
     fp = open(fichier_sortie, "w")
+    retour = []
     for robot in robots:
-        fp.write(robot.affiche_resultat() + "\n")
+        res = robot.affiche_resultat()
+        fp.write(res + "\n")
+        retour.append(res)
 
     fp.close()
+    return retour
