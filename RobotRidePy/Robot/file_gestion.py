@@ -82,6 +82,6 @@ def lecture(fichier_entree, fichier_sortie):
 
     ecriture(chemins, fichier_sortie)
 
-    print("Moyenne de temps de création", sum(temps_creation)/len(temps_creation))
-    print("Moyenne de temps de calcul", sum(temps_calcul)/len(temps_calcul))
+    # print("Moyenne de temps de création", sum(temps_creation)/len(temps_creation))
+    # print("Moyenne de temps de calcul", sum(temps_calcul)/len(temps_calcul))
     return chemins, temps_creation, temps_calcul

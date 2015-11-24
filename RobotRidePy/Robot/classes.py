@@ -34,11 +34,11 @@ class Node:
         """
             Ajoute un sommet à la liste d'adjacence du sommet courant
             :param sommet: sommet à ajouter
-            :type x: Node
+            :type sommet: Node
         """
         self.adjacents.append(sommet)
 
-    def calculer_chemin(self):
+    def calculer_chemin_str(self):
         """
             Calcule le chemin pour arriver au sommet de départ du robot depuis le sommet courant
             :return: Chaine de caractère représentant le temps de parcours et le chemin emprunté par le robot
@@ -47,7 +47,7 @@ class Node:
         temps = 0
         res = ""
         n = self
-        if n.pere == None:
+        if n.pere is None:
             return "-1"
         while n.pere != -1:
             if n.pere.x == n.x and n.pere.y == n.y:
@@ -62,6 +62,22 @@ class Node:
             temps += 1
             n = n.pere
         return str(temps) + res
+
+    def calculer_chemin_liste(self):
+        """
+            Calcule le chemin pour arriver au sommet de départ du robot depuis le sommet courant
+            :return: liste de couples de coordonnées des points sur le chemin emprunté par le robot
+            :rtype: list
+        """
+        n = self
+        res = []
+        if n.pere is None:
+            return res
+        while n.pere != -1:
+            res.append((n.x, n.y))
+            n = n.pere
+        res.append((n.x, n.y))  # On ajoute aussi le point de départ, qui a le père qui vaut -1
+        return res
 
 
 class Graph:
@@ -115,7 +131,7 @@ class Graph:
 
     def ajoute_sommets(self, nb_lignes, nb_colonnes, lignes):
         """
-            Crée tous les sommets du graphe, on fera le tri plus tard
+            Crée tous les sommets du graphe, puis fait le tri pour supprimer ceux inaccessibles par le robot
             :param nb_lignes: nombre de lignes du dépôt
             :param nb_colonnes: nombre de colonnes du dépôt
             :param lignes: liste de listes, chacune représentant une ligne du dépôt
@@ -215,7 +231,8 @@ class Graph:
 
     def ajoute_arcs(self, nb_lignes, nb_colonnes):
         """
-            Ajoute ses arcs à chaque sommet: pour cela on ajoute les noeuds accessibles en une seconde à la liste d'adjacence
+            Ajoute ses arcs à chaque sommet: pour cela on ajoute les noeuds accessibles
+            en une seconde à la liste d'adjacence
             :param nb_lignes: nombre de lignes du dépôt
             :param nb_colonnes: nombre de colonnes du dépôt
             :type nb_lignes: int
@@ -342,4 +359,18 @@ class Robot:
             n = self.graphe.get_sommet(self.arrivee[0], self.arrivee[1], i)
             if n.pere:
                 break
-        return n.calculer_chemin()
+        return n.calculer_chemin_str()
+
+    def coordonnees_chemin(self):
+        """
+            Recherche le chemin le plus rapide entre le point de départ et d'arrivée du robot,
+            puis trouve les coordonnées des points empruntés et les retourne
+            :return: chemin le plus rapide
+            :rtype: list
+        """
+        self.parcours_en_largeur()
+        for i in Orientation:
+            n = self.graphe.get_sommet(self.arrivee[0], self.arrivee[1], i)
+            if n.pere:
+                break
+        return n.calculer_chemin_liste()

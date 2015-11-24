@@ -1,3 +1,4 @@
+from tkinter.ttk import Combobox
 from tkinter.filedialog import *
 from tkinter.messagebox import *
 from Robot.file_gestion import *
@@ -6,6 +7,8 @@ import os
 
 apropos_message = """Ce programme est un projet réalisé par Thibault Gigant pour le projet de MOGPL en 2015
 Le but de ce programme est de trouver le chemin le plus rapide d'un robot dans un entrepôt entre deux points"""
+leftframewidth = 800
+leftframeheight = 800
 
 
 class TopMenu(Menu):
@@ -33,73 +36,23 @@ class TopMenu(Menu):
         self.add_cascade(label="Aide", menu=menu2)
 
 
-class RightFrame(Frame):
-    def __init__(self, parent):
-        Frame.__init__(self, parent, padx=10, pady=10)
-        self.parent = parent
-        self.opened_widgets = []
-
-    def clean(self):
-        for i in self.opened_widgets:
-            i.destroy()
-
-    def choice_buttons(self):
-        self.clean()
-        open_button = Button(self.parent, text="Récupérer un problème depuis un fichier",
-                             command=self.parent.lancer_fichier)
-        create_button = Button(self.parent, text="Créer manuellement un problème",
-                               command=self.parent.lancer_fichier)
-        open_button.grid(column=0, row=0)
-        create_button.grid(column=0, row=1)
-        self.opened_widgets.append(open_button)
-        self.opened_widgets.append(create_button)
-
-    def demander_sortie(self):
-        self.clean()
-        label = Label(self, text="Fichier d'entrée")
-        entry = Entry(self, textvariable=self.parent.entree)
-        bouton = Button(self, text="Changer le fichier d'entrée", command=self.parent.lancer_fichier)
-        label.grid(column=0, row=0, columnspan=3)
-        entry.grid(column=0, row=1, columnspan=2)
-        bouton.grid(column=2, row=1)
-        self.opened_widgets.append(label)
-        self.opened_widgets.append(entry)
-        self.opened_widgets.append(bouton)
-
-        # On demande enfin la sortie
-        label = Label(self, text="Fichier de sortie")
-        entry = Entry(self, textvariable=self.parent.sortie)
-        bouton = Button(self, text="Choisir un fichier existant",
-                        command=lambda: self.parent.sortie.set(choisir_fichier("Choisir un fichier de sortie")))
-        label.grid(column=0, row=2, columnspan=3)
-        entry.grid(column=0, row=3, columnspan=2)
-        bouton.grid(column=2, row=3)
-        self.opened_widgets.append(label)
-        self.opened_widgets.append(entry)
-        self.opened_widgets.append(bouton)
-
-        # Lancement de l'algorithme
-        validate_button = Button(self, text="Lancer l'algorithme", command=self.parent.lancer_algo)
-        validate_button.grid(column=0, row=4, columnspan=3)
-        self.opened_widgets.append(validate_button)
-
-
 class LeftFrame(Frame):
     def __init__(self, parent):
         Frame.__init__(self, parent)
         self.parent = parent
         self.opened_widgets = []
+        self.canvas = None
         self.initialize()
 
     def initialize(self):
-        canvas = Canvas(self, width=800, height=700)
-        for i in range(0, 800, 800//20):
-            for j in range(0, 700, 700//20):
-                rectangle(canvas, i, j, i+800//20, j+700//20)
-        canvas.pack()
-        self.opened_widgets.append(canvas)
+        self.affiche_grille(self.parent.grilles[0])
+
+    def clean(self):
+        for i in self.opened_widgets:
+            i.destroy()
 
     def afficher_resultat(self, resultat, tps_creat, tps_calc):
+        self.clean()
         for i in range(len(resultat)):
             label = Label(self, text="Problème n°"+str(i))
             label_res = Label(self, text=resultat[i])
@@ -114,6 +67,114 @@ class LeftFrame(Frame):
             self.opened_widgets.append(label_tps_creat)
             self.opened_widgets.append(label_tps_calc)
 
+    def affiche_grille(self, grille):
+        nb_lignes, nb_colonnes = grille[0]
+        lignes = grille[1]
+        ligne = grille[2]
+        self.clean()
+        self.canvas = Canvas(self, width=leftframewidth, height=leftframeheight)
+        # Récupération des données du problème
+        pas_colonne = leftframewidth//nb_colonnes
+        pas_ligne = leftframeheight//nb_lignes
+        rayon = min(pas_ligne//2, pas_colonne//2)  # rayon des cercles du robot au départ et à l'arrivée
+        # Dessin du quadrillage
+        for i in range(0, nb_lignes):
+            for j in range(0, nb_colonnes):
+                if lignes[i][j] == '0':
+                    rectangle(self.canvas, j*pas_colonne, i*pas_ligne, (j+1)*pas_colonne, (i+1)*pas_ligne)
+                else:
+                    rectangle(self.canvas,
+                              j*pas_colonne, i*pas_ligne, (j+1)*pas_colonne, (i+1)*pas_ligne, color="#a28cff")
+        # Dessin du point de départ du robot avec sa flèche
+        dessine_depart(self.canvas, int(ligne[1])*pas_colonne, int(ligne[0])*pas_ligne, rayon, ligne[-1])
+        # Dessin du point d'arrivée du robot
+        cercle(self.canvas, int(ligne[3])*pas_colonne, int(ligne[2])*pas_ligne, rayon)
+        self.canvas.pack()
+        self.opened_widgets.append(self.canvas)
+
+    def affiche_chemin(self, grille, chemin):
+        self.affiche_grille(grille)
+        nb_lignes, nb_colonnes = grille[0]
+        pas_colonne = leftframewidth//nb_colonnes
+        pas_ligne = leftframeheight//nb_lignes
+        for i in range(1, len(chemin)):
+            self.canvas.create_line(chemin[i-1][1]*pas_colonne, chemin[i-1][0]*pas_ligne,
+                                    chemin[i][1]*pas_colonne, chemin[i][0]*pas_ligne, width=3)
+
+
+class RightFrame(Frame):
+    def __init__(self, parent):
+        Frame.__init__(self, parent, padx=10, pady=10)
+        self.parent = parent
+        self.widget_grilles = None
+        self.opened_widgets = []
+
+    def clean(self):
+        for i in self.opened_widgets:
+            i.destroy()
+
+    def choice_buttons(self):
+        self.clean()
+        open_button = Button(self.parent, text="Récupérer un problème depuis un fichier",
+                             command=self.parent.lancer_fichier)
+        create_button = Button(self.parent, text="Créer manuellement un problème",
+                               command=self.parent.lancer_fichier)
+        open_button.pack()
+        create_button.pack()
+        self.opened_widgets.append(open_button)
+        self.opened_widgets.append(create_button)
+
+    def ouvrir_fichiers(self):
+        self.clean()
+        label = Label(self, text="Fichier d'entrée")
+        entry = Entry(self, textvariable=self.parent.entree)
+        bouton = Button(self, text="Changer le fichier d'entrée",
+                        command=lambda: self.parent.entree.set(choisir_fichier("Choisir le fichier d'entrée")))
+        label.grid(column=0, row=0, columnspan=3)
+        entry.grid(column=0, row=1, columnspan=2)
+        bouton.grid(column=2, row=1)
+        self.opened_widgets.append(label)
+        self.opened_widgets.append(entry)
+        self.opened_widgets.append(bouton)
+
+        # On demande enfin la sortie
+        label = Label(self, text="Fichier de sortie")
+        entry = Entry(self, textvariable=self.parent.sortie)
+        bouton = Button(self, text="Choisir un fichier existant",
+                        command=lambda: self.parent.sortie.set(choisir_fichier("Choisir le fichier de sortie")))
+        label.grid(column=0, row=2, columnspan=3)
+        entry.grid(column=0, row=3, columnspan=2)
+        bouton.grid(column=2, row=3)
+        self.opened_widgets.append(label)
+        self.opened_widgets.append(entry)
+        self.opened_widgets.append(bouton)
+
+        # Lancement de l'algorithme pour toutes les grilles
+        validate_all = Button(self, text="Lancer l'algorithme pour toutes les grilles du fichier d'entrée",
+                              command=self.parent.lancer_algo)
+        validate_all.grid(column=0, row=4, columnspan=3)
+        self.opened_widgets.append(validate_all)
+
+        # Lancement de l'algorithme pour une seule grille
+        label = Label(self, text="Ou choisir une grille dans le fichier d'entrée")
+        label.grid(column=0, row=5, columnspan=3)
+        self.opened_widgets.append(label)
+        self.update_widget_grilles()
+        bouton_maj = Button(self, text="Mise à jour des grilles", command=self.update_widget_grilles)
+        bouton_maj.grid(column=2, row=6)
+        self.opened_widgets.append(bouton_maj)
+
+    def update_widget_grilles(self):
+        self.parent.update_grilles()
+        if self.widget_grilles is not None:
+            self.widget_grilles.destroy()
+        varcombo = StringVar()
+        combo = Combobox(self, textvariable=varcombo)
+        combo['values'] = []
+        for i in range(1, len(self.parent.grilles)+1):
+            combo['values'].append("Grille n°" + str(i))
+        combo.grid(column=0, row=6, columnspan=2)
+
 
 class FenetrePrincipale(Tk):
     def __init__(self, parent):
@@ -126,9 +187,11 @@ class FenetrePrincipale(Tk):
         self.menu = None
         self.leftFrame = None
         self.rightFrame = None
+        self.grilles = []
         self.initialize()
 
     def initialize(self):
+        self.update_grilles()
         self.grid()
         self.menu = TopMenu(self)
         self.rightFrame = RightFrame(self)
@@ -136,6 +199,9 @@ class FenetrePrincipale(Tk):
         self.leftFrame.pack(side=LEFT, padx=10, pady=10)
         self.rightFrame.pack(side=RIGHT, padx=10, pady=10)
         self.menu_principal()
+
+    def update_grilles(self):
+        self.grilles = get_grilles(self.entree.get())
 
     def menu_principal(self):
         self.choice_buttons()
@@ -152,7 +218,7 @@ class FenetrePrincipale(Tk):
         self.rightFrame.choice_buttons()
 
     def lancer_fichier(self):
-        self.rightFrame.demander_sortie()
+        self.rightFrame.ouvrir_fichiers()
 
     def lancer_algo(self):
         if os.path.isfile(self.entree.get()):
@@ -177,8 +243,33 @@ def apropos():
     showinfo("Robot Ride !", apropos_message)
 
 
-def rectangle(canvas, x1, y1, x2, y2, color="#FEFF8E"):
-    canvas.create_rectangle(x1, y1, x2, y2, fill=color)
+def rectangle(canvas, x1, y1, x2, y2, color="white", border_color="black"):  # FEFF8E
+    canvas.create_rectangle(x1, y1, x2, y2, fill=color, outline=border_color)
+
+
+def cercle(canvas, x, y, r, color="black"):
+    canvas.create_oval(x-r, y-r, x+r, y+r, fill=color)
+
+
+def dessine_depart(canvas, x, y, echelle, direction, color="black"):
+    cercle(canvas, x, y, echelle, color)
+    canvas.create_line(x, y,
+                       x + ((direction == "est") - (direction == "ouest")) * echelle * 2,
+                       y + ((direction == "sud") - (direction == "nord")) * echelle * 2,
+                       width=5, arrow=LAST)
+
+
+# Construit un triangle équilatéral dans la direction voulue
+# la valeur "echelle" représente la dimension minimal leftframewidth//nb_colonnes ou leftframeheight//nb_lignes
+def triangle(canvas, x, y, echelle, direction, color="black"):
+    if direction == "sud":
+        canvas.create_polygon(x-echelle, y-echelle, x+echelle, y-echelle, x, y+echelle, fill=color)
+    if direction == "nord":
+        canvas.create_polygon(x+echelle, y+echelle, x-echelle, y+echelle, x, y-echelle, fill=color)
+    if direction == "est":
+        canvas.create_polygon(x-echelle, y-echelle, x-echelle, y+echelle, x+echelle, y, fill=color)
+    if direction == "ouest":
+        canvas.create_polygon(x+echelle, y+echelle, x+echelle, y-echelle, x-echelle, y, fill=color)
 
 
 def affichage_fenetre():
