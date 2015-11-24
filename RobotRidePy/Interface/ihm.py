@@ -1,6 +1,6 @@
 from tkinter.filedialog import *
 from tkinter.messagebox import *
-from Robot.file_gestion import lecture
+from Robot.file_gestion import *
 import os
 
 
@@ -22,7 +22,7 @@ class TopMenu(Menu):
     def menu_fichier(self):
         menu1 = Menu(self, tearoff=0)
         menu1.add_command(label="Ouvrir", command=self.parent.lancer_fichier)
-        # menu1.add_command(label="Créer", command=lancer_base)
+        # menu1.add_command(label="Créer", command=self.parent.lancer_base)
         menu1.add_separator()
         menu1.add_command(label="Quitter", command=self.parent.quit)
         self.add_cascade(label="Fichier", menu=menu1)
@@ -39,19 +39,23 @@ class RightFrame(Frame):
         self.parent = parent
         self.opened_widgets = []
 
+    def clean(self):
+        for i in self.opened_widgets:
+            i.destroy()
+
     def choice_buttons(self):
+        self.clean()
         open_button = Button(self.parent, text="Récupérer un problème depuis un fichier",
                              command=self.parent.lancer_fichier)
         create_button = Button(self.parent, text="Créer manuellement un problème",
                                command=self.parent.lancer_fichier)
+        open_button.grid(column=0, row=0)
+        create_button.grid(column=0, row=1)
         self.opened_widgets.append(open_button)
         self.opened_widgets.append(create_button)
-        open_button.pack()
-        create_button.pack()
 
     def demander_sortie(self):
-        # On redemande l'entrée au cas où...
-        self.grid()
+        self.clean()
         label = Label(self, text="Fichier d'entrée")
         entry = Entry(self, textvariable=self.parent.entree)
         bouton = Button(self, text="Changer le fichier d'entrée", command=self.parent.lancer_fichier)
@@ -85,10 +89,15 @@ class LeftFrame(Frame):
         Frame.__init__(self, parent)
         self.parent = parent
         self.opened_widgets = []
-    #     self.initialize()
-    #
-    # def initialize(self):
-    #     self.pack(side=LEFT)
+        self.initialize()
+
+    def initialize(self):
+        canvas = Canvas(self, width=800, height=700)
+        for i in range(0, 800, 800//20):
+            for j in range(0, 700, 700//20):
+                rectangle(canvas, i, j, i+800//20, j+700//20)
+        canvas.pack()
+        self.opened_widgets.append(canvas)
 
     def afficher_resultat(self, resultat, tps_creat, tps_calc):
         for i in range(len(resultat)):
@@ -112,35 +121,38 @@ class FenetrePrincipale(Tk):
         self.parent = parent
         self.entree = StringVar()
         self.sortie = StringVar()
+        self.entree.set("/Users/Tigig/Documents/Travail/M1/M1-MOGPL/RobotRidePy/Instances/x9y10o10.dat")
+        self.sortie.set("/Users/Tigig/Documents/Travail/M1/M1-MOGPL/RobotRidePy/Instances/Résultats/x9y10o10out.dat")
         self.menu = None
         self.leftFrame = None
         self.rightFrame = None
         self.initialize()
 
     def initialize(self):
+        self.grid()
         self.menu = TopMenu(self)
-        self.leftFrame = LeftFrame(self)
         self.rightFrame = RightFrame(self)
+        self.leftFrame = LeftFrame(self)
+        self.leftFrame.pack(side=LEFT, padx=10, pady=10)
+        self.rightFrame.pack(side=RIGHT, padx=10, pady=10)
         self.menu_principal()
 
     def menu_principal(self):
-        self.clear_fenetre()
         self.choice_buttons()
 
     def clear_fenetre(self):
-        for i in self.leftFrame.opened_widgets:
-            i.destroy()
-        for i in self.rightFrame.opened_widgets:
-            i.destroy()
+        if self.leftFrame:
+            for i in self.leftFrame.opened_widgets:
+                i.destroy()
+        if self.rightFrame:
+            for i in self.rightFrame.opened_widgets:
+                i.destroy()
 
     def choice_buttons(self):
         self.rightFrame.choice_buttons()
 
     def lancer_fichier(self):
-        self.entree.set(choisir_fichier("Choisir un fichier en Entrée"))
-        if os.path.isfile(self.entree.get()):
-            self.clear_fenetre()
-            self.rightFrame.demander_sortie()
+        self.rightFrame.demander_sortie()
 
     def lancer_algo(self):
         if os.path.isfile(self.entree.get()):
@@ -163,6 +175,10 @@ def choisir_fichier(titre):
 
 def apropos():
     showinfo("Robot Ride !", apropos_message)
+
+
+def rectangle(canvas, x1, y1, x2, y2, color="#FEFF8E"):
+    canvas.create_rectangle(x1, y1, x2, y2, fill=color)
 
 
 def affichage_fenetre():
