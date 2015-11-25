@@ -373,4 +373,4 @@ class Robot:
             n = self.graphe.get_sommet(self.arrivee[0], self.arrivee[1], i)
             if n.pere:
                 break
-        return n.calculer_chemin_liste()
+        return n.calculer_chemin_liste(), n.calculer_chemin_str()

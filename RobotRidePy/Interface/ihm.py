@@ -7,8 +7,8 @@ import os
 
 apropos_message = """Ce programme est un projet réalisé par Thibault Gigant pour le projet de MOGPL en 2015
 Le but de ce programme est de trouver le chemin le plus rapide d'un robot dans un entrepôt entre deux points"""
-leftframewidth = 1000
-leftframeheight = 800
+leftframewidth = 800
+leftframeheight = leftframewidth
 
 
 class TopMenu(Menu):
@@ -42,68 +42,85 @@ class LeftFrame(Frame):
         self.parent = parent
         self.opened_widgets = []
         self.canvas = None
+        self.nb_colonnes = 0
+        self.nb_lignes = 0
+        self.pas_colonne = 0
+        self.pas_ligne = 0
+        self.rectangles = []
         self.initialize()
 
     def initialize(self):
         self.affiche_grille(self.parent.grilles[0])
+        self.rescale()
 
     def clean(self):
         for i in self.opened_widgets:
             i.destroy()
 
-    def afficher_resultat(self, resultat, tps_creat, tps_calc):
+    def rescale(self):
+        if self.canvas is not None and self.pas_colonne != 0 and self.pas_ligne != 0:
+            self.canvas.scale(ALL, -1, -1, self.pas_colonne, self.pas_ligne)
+
+    def afficher_resultat(self, resultat, tps_creat=[], tps_calc=[]):
         self.clean()
         for i in range(len(resultat)):
             label = Label(self, text="Problème n°"+str(i))
-            label_res = Label(self, text=resultat[i])
-            label_tps_creat = Label(self, text="La création du graphe a pris " + str(tps_creat[i]) + " secondes")
-            label_tps_calc = Label(self, text="Le calcul de la solution a pris " + str(tps_calc[i]) + " secondes")
             label.pack()
+            label_res = Label(self, text=resultat[i])
             label_res.pack()
-            label_tps_creat.pack()
-            label_tps_calc.pack()
+            if tps_creat:
+                label_tps_creat = Label(self, text="La création du graphe a pris " + str(tps_creat[i]) + " secondes")
+                label_tps_creat.pack()
+                self.opened_widgets.append(label_tps_creat)
+            if tps_calc:
+                label_tps_calc = Label(self, text="Le calcul de la solution a pris " + str(tps_calc[i]) + " secondes")
+                label_tps_calc.pack()
+                self.opened_widgets.append(label_tps_calc)
             self.opened_widgets.append(label)
             self.opened_widgets.append(label_res)
-            self.opened_widgets.append(label_tps_creat)
-            self.opened_widgets.append(label_tps_calc)
 
-    def affiche_grille(self, grille):
-        nb_lignes, nb_colonnes = grille[0]
+    def affiche_grille(self, grille):  # Ne pas oublier de faire un rescale après appel !!!
+        self.nb_lignes, self.nb_colonnes = grille[0]
         lignes = grille[1]
         ligne = grille[2]
         self.clean()
         self.canvas = Canvas(self, width=leftframewidth, height=leftframeheight)
         # Récupération des données du problème
-        pas_colonne = leftframewidth//nb_colonnes
-        pas_ligne = leftframeheight//nb_lignes
-        rayon = min(pas_ligne//2, pas_colonne//2)  # rayon des cercles du robot au départ et à l'arrivée
+        self.pas_colonne = leftframewidth//(self.nb_colonnes + 2)
+        self.pas_ligne = leftframeheight//(self.nb_lignes + 2)
+        self.rectangles = [[None for j in range(self.nb_colonnes)] for i in range(self.nb_lignes)]
+        rayon = 1/2  # rayon des cercles du robot au départ et à l'arrivée
         # Dessin du quadrillage
-        for i in range(0, nb_lignes):
-            for j in range(0, nb_colonnes):
+        for i in range(0, self.nb_lignes):
+            for j in range(0, self.nb_colonnes):
                 if lignes[i][j] == '0':
-                    rectangle(self.canvas, j*pas_colonne, i*pas_ligne, (j+1)*pas_colonne, (i+1)*pas_ligne)
+                    self.rectangles[i][j] = rectangle(self.canvas, j, i, j+1, i+1)
                 else:
-                    rectangle(self.canvas,
-                              j*pas_colonne, i*pas_ligne, (j+1)*pas_colonne, (i+1)*pas_ligne, color="#a28cff")
+                    self.rectangles[i][j] = rectangle(self.canvas,
+                              j, i, j+1, i+1, color="#a28cff")
         # Dessin du point de départ du robot avec sa flèche
-        dessine_depart(self.canvas, int(ligne[1])*pas_colonne, int(ligne[0])*pas_ligne, rayon, ligne[-1])
+        dessine_depart(self.canvas, int(ligne[1]), int(ligne[0]), rayon, ligne[-1])
         # Dessin du point d'arrivée du robot
-        cercle(self.canvas, int(ligne[3])*pas_colonne, int(ligne[2])*pas_ligne, rayon)
+        cercle(self.canvas, int(ligne[3]), int(ligne[2]), rayon)
         self.canvas.pack()
         self.opened_widgets.append(self.canvas)
 
-    def affiche_chemin(self, grille, chemin):
+    def affiche_chemin(self, grille, chemin_list, chemin_str):
+        # Affichage de la grille elle-même
         self.affiche_grille(grille)
-        nb_lignes, nb_colonnes = grille[0]
-        pas_colonne = leftframewidth//nb_colonnes
-        pas_ligne = leftframeheight//nb_lignes
-        for i in range(1, len(chemin)):
-            self.canvas.create_line(chemin[i-1][1]*pas_colonne, chemin[i-1][0]*pas_ligne,
-                                    chemin[i][1]*pas_colonne, chemin[i][0]*pas_ligne, width=5)
+        # Ajout du chemin par des lignes
+        for i in range(1, len(chemin_list)):
+            self.canvas.create_line(chemin_list[i-1][1], chemin_list[i-1][0],
+                                    chemin_list[i][1], chemin_list[i][0], width=5)
         # on redessine le point de départ pour que ce soit plus "joli"
         ligne = grille[2]
-        rayon = min(pas_ligne//2, pas_colonne//2)
-        dessine_depart(self.canvas, int(ligne[1])*pas_colonne, int(ligne[0])*pas_ligne, rayon, ligne[-1])
+        rayon = 1/2
+        dessine_depart(self.canvas, int(ligne[1]), int(ligne[0]), rayon, ligne[-1])
+        self.ecrire_chemin(chemin_str)
+        self.rescale()
+
+    def ecrire_chemin(self, chemin):
+        self.canvas.create_text(2, self.nb_lignes+1/2, text=chemin, font=("Helvetica", 20))
 
 
 class RightFrame(Frame):
@@ -178,6 +195,8 @@ class RightFrame(Frame):
         for i in range(1, len(self.parent.grilles)+1):
             combo_liste.append("Grille n°" + str(i))
         combo['values'] = tuple(combo_liste)
+        combo['state'] = "readonly"
+        combo.current(0)
         combo.grid(column=0, row=6, columnspan=2)
         bouton_affichage = Button(self, text="Visualiser la grille",
                                   command=lambda: self.parent.afficher_grille(combo_liste.index(combo.get())))
@@ -249,11 +268,12 @@ class FenetrePrincipale(Tk):
     def afficher_grille(self, numero_grille):
         grille = self.grilles[numero_grille]
         self.leftFrame.affiche_grille(grille)
+        self.leftFrame.rescale()
 
     def lancer_grille(self, numero_grille):
         grille = self.grilles[numero_grille]
-        chemin = lancement_et_chemin(grille)
-        self.leftFrame.affiche_chemin(grille, chemin)
+        chemin_list, chemin_str = lancement_et_chemin(grille)
+        self.leftFrame.affiche_chemin(grille, chemin_list, chemin_str)
 
 
 # Méthodes en dehors des classes, communes
@@ -266,7 +286,7 @@ def apropos():
 
 
 def rectangle(canvas, x1, y1, x2, y2, color="white", border_color="black"):  # FEFF8E
-    canvas.create_rectangle(x1, y1, x2, y2, fill=color, outline=border_color)
+    return canvas.create_rectangle(x1, y1, x2, y2, fill=color, outline=border_color)
 
 
 def cercle(canvas, x, y, r, color="black"):
@@ -277,9 +297,9 @@ def dessine_depart(canvas, x, y, echelle, direction, color="red"):
     # triangle(canvas, x, y, echelle, direction, color)
     cercle(canvas, x, y, echelle, color)
     canvas.create_line(x, y,
-                       x + ((direction == "est") - (direction == "ouest")) * max(echelle * 2, 20),
-                       y + ((direction == "sud") - (direction == "nord")) * max(echelle * 2, 20),
-                       width=max(echelle//4, 5), arrow=LAST, fill=color)
+                       x + ((direction == "est") - (direction == "ouest")),
+                       y + ((direction == "sud") - (direction == "nord")),
+                       width=max(echelle//4, 8), arrow=LAST, fill=color)
 
 
 # Construit un triangle équilatéral dans la direction voulue
