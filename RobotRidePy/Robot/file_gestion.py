@@ -60,6 +60,11 @@ def lancement_depuis_robots(robots):
     return chemins, temps_calcul
 
 
+def lancement_et_chemin(grille):
+    robots, temps_creation = creation_robots([grille])
+    return robots[0].coordonnees_chemin()
+
+
 def ecriture(chemins, fichier_sortie):
     fp = open(fichier_sortie, "w")
     for chemin in chemins:

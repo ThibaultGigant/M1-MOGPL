@@ -7,7 +7,7 @@ import os
 
 apropos_message = """Ce programme est un projet réalisé par Thibault Gigant pour le projet de MOGPL en 2015
 Le but de ce programme est de trouver le chemin le plus rapide d'un robot dans un entrepôt entre deux points"""
-leftframewidth = 800
+leftframewidth = 1000
 leftframeheight = 800
 
 
@@ -99,7 +99,11 @@ class LeftFrame(Frame):
         pas_ligne = leftframeheight//nb_lignes
         for i in range(1, len(chemin)):
             self.canvas.create_line(chemin[i-1][1]*pas_colonne, chemin[i-1][0]*pas_ligne,
-                                    chemin[i][1]*pas_colonne, chemin[i][0]*pas_ligne, width=3)
+                                    chemin[i][1]*pas_colonne, chemin[i][0]*pas_ligne, width=5)
+        # on redessine le point de départ pour que ce soit plus "joli"
+        ligne = grille[2]
+        rayon = min(pas_ligne//2, pas_colonne//2)
+        dessine_depart(self.canvas, int(ligne[1])*pas_colonne, int(ligne[0])*pas_ligne, rayon, ligne[-1])
 
 
 class RightFrame(Frame):
@@ -130,9 +134,9 @@ class RightFrame(Frame):
         entry = Entry(self, textvariable=self.parent.entree)
         bouton = Button(self, text="Changer le fichier d'entrée",
                         command=lambda: self.parent.entree.set(choisir_fichier("Choisir le fichier d'entrée")))
-        label.grid(column=0, row=0, columnspan=3)
-        entry.grid(column=0, row=1, columnspan=2)
-        bouton.grid(column=2, row=1)
+        label.grid(column=0, row=0, columnspan=4)
+        entry.grid(column=0, row=1, columnspan=3)
+        bouton.grid(column=3, row=1)
         self.opened_widgets.append(label)
         self.opened_widgets.append(entry)
         self.opened_widgets.append(bouton)
@@ -142,9 +146,9 @@ class RightFrame(Frame):
         entry = Entry(self, textvariable=self.parent.sortie)
         bouton = Button(self, text="Choisir un fichier existant",
                         command=lambda: self.parent.sortie.set(choisir_fichier("Choisir le fichier de sortie")))
-        label.grid(column=0, row=2, columnspan=3)
-        entry.grid(column=0, row=3, columnspan=2)
-        bouton.grid(column=2, row=3)
+        label.grid(column=0, row=2, columnspan=4)
+        entry.grid(column=0, row=3, columnspan=3)
+        bouton.grid(column=3, row=3)
         self.opened_widgets.append(label)
         self.opened_widgets.append(entry)
         self.opened_widgets.append(bouton)
@@ -152,16 +156,16 @@ class RightFrame(Frame):
         # Lancement de l'algorithme pour toutes les grilles
         validate_all = Button(self, text="Lancer l'algorithme pour toutes les grilles du fichier d'entrée",
                               command=self.parent.lancer_algo)
-        validate_all.grid(column=0, row=4, columnspan=3)
+        validate_all.grid(column=0, row=4, columnspan=4)
         self.opened_widgets.append(validate_all)
 
         # Lancement de l'algorithme pour une seule grille
         label = Label(self, text="Ou choisir une grille dans le fichier d'entrée")
-        label.grid(column=0, row=5, columnspan=3)
+        label.grid(column=0, row=5, columnspan=4)
         self.opened_widgets.append(label)
         self.update_widget_grilles()
         bouton_maj = Button(self, text="Mise à jour des grilles", command=self.update_widget_grilles)
-        bouton_maj.grid(column=2, row=6)
+        bouton_maj.grid(column=2, row=6, columnspan=2)
         self.opened_widgets.append(bouton_maj)
 
     def update_widget_grilles(self):
@@ -170,10 +174,19 @@ class RightFrame(Frame):
             self.widget_grilles.destroy()
         varcombo = StringVar()
         combo = Combobox(self, textvariable=varcombo)
-        combo['values'] = []
+        combo_liste = []
         for i in range(1, len(self.parent.grilles)+1):
-            combo['values'].append("Grille n°" + str(i))
+            combo_liste.append("Grille n°" + str(i))
+        combo['values'] = tuple(combo_liste)
         combo.grid(column=0, row=6, columnspan=2)
+        bouton_affichage = Button(self, text="Visualiser la grille",
+                                  command=lambda: self.parent.afficher_grille(combo_liste.index(combo.get())))
+        bouton_lancement = Button(self, text="Lancer l'algorithme sur cette grille",
+                                  command=lambda: self.parent.lancer_grille(combo_liste.index(combo.get())))
+        bouton_affichage.grid(column=0, row=7, columnspan=2)
+        bouton_lancement.grid(column=2, row=7, columnspan=2)
+        self.opened_widgets.append(combo)
+        self.opened_widgets.append(bouton_lancement)
 
 
 class FenetrePrincipale(Tk):
@@ -233,6 +246,15 @@ class FenetrePrincipale(Tk):
         else:
             showerror("Erreur Fichiers", "Le fichier d'entrée est introuvable")
 
+    def afficher_grille(self, numero_grille):
+        grille = self.grilles[numero_grille]
+        self.leftFrame.affiche_grille(grille)
+
+    def lancer_grille(self, numero_grille):
+        grille = self.grilles[numero_grille]
+        chemin = lancement_et_chemin(grille)
+        self.leftFrame.affiche_chemin(grille, chemin)
+
 
 # Méthodes en dehors des classes, communes
 def choisir_fichier(titre):
@@ -248,15 +270,16 @@ def rectangle(canvas, x1, y1, x2, y2, color="white", border_color="black"):  # F
 
 
 def cercle(canvas, x, y, r, color="black"):
-    canvas.create_oval(x-r, y-r, x+r, y+r, fill=color)
+    canvas.create_oval(x-r, y-r, x+r, y+r, fill=color, outline=color)
 
 
-def dessine_depart(canvas, x, y, echelle, direction, color="black"):
+def dessine_depart(canvas, x, y, echelle, direction, color="red"):
+    # triangle(canvas, x, y, echelle, direction, color)
     cercle(canvas, x, y, echelle, color)
     canvas.create_line(x, y,
-                       x + ((direction == "est") - (direction == "ouest")) * echelle * 2,
-                       y + ((direction == "sud") - (direction == "nord")) * echelle * 2,
-                       width=5, arrow=LAST)
+                       x + ((direction == "est") - (direction == "ouest")) * max(echelle * 2, 20),
+                       y + ((direction == "sud") - (direction == "nord")) * max(echelle * 2, 20),
+                       width=max(echelle//4, 5), arrow=LAST, fill=color)
 
 
 # Construit un triangle équilatéral dans la direction voulue
