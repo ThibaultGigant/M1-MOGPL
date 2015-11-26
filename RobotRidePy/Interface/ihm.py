@@ -2,12 +2,12 @@ from tkinter.ttk import Combobox
 from tkinter.filedialog import *
 from tkinter.messagebox import *
 from Robot.file_gestion import *
-import os
+import os, random
 
 
 apropos_message = """Ce programme est un projet réalisé par Thibault Gigant pour le projet de MOGPL en 2015
 Le but de ce programme est de trouver le chemin le plus rapide d'un robot dans un entrepôt entre deux points"""
-leftframewidth = 800
+leftframewidth = 600
 leftframeheight = leftframewidth
 
 
@@ -25,7 +25,7 @@ class TopMenu(Menu):
     def menu_fichier(self):
         menu1 = Menu(self, tearoff=0)
         menu1.add_command(label="Ouvrir", command=self.parent.lancer_fichier)
-        # menu1.add_command(label="Créer", command=self.parent.lancer_base)
+        menu1.add_command(label="Créer", command=self.parent.creer_grille)
         menu1.add_separator()
         menu1.add_command(label="Quitter", command=self.parent.quit)
         self.add_cascade(label="Fichier", menu=menu1)
@@ -40,7 +40,6 @@ class LeftFrame(Frame):
     def __init__(self, parent):
         Frame.__init__(self, parent)
         self.parent = parent
-        self.opened_widgets = []
         self.canvas = None
         self.nb_colonnes = 0
         self.nb_lignes = 0
@@ -54,7 +53,7 @@ class LeftFrame(Frame):
         self.rescale()
 
     def clean(self):
-        for i in self.opened_widgets:
+        for i in self.winfo_children():
             i.destroy()
 
     def rescale(self):
@@ -71,13 +70,9 @@ class LeftFrame(Frame):
             if tps_creat:
                 label_tps_creat = Label(self, text="La création du graphe a pris " + str(tps_creat[i]) + " secondes")
                 label_tps_creat.pack()
-                self.opened_widgets.append(label_tps_creat)
             if tps_calc:
                 label_tps_calc = Label(self, text="Le calcul de la solution a pris " + str(tps_calc[i]) + " secondes")
                 label_tps_calc.pack()
-                self.opened_widgets.append(label_tps_calc)
-            self.opened_widgets.append(label)
-            self.opened_widgets.append(label_res)
 
     def affiche_grille(self, grille):  # Ne pas oublier de faire un rescale après appel !!!
         self.nb_lignes, self.nb_colonnes = grille[0]
@@ -103,7 +98,6 @@ class LeftFrame(Frame):
         # Dessin du point d'arrivée du robot
         cercle(self.canvas, int(ligne[3]), int(ligne[2]), rayon)
         self.canvas.pack()
-        self.opened_widgets.append(self.canvas)
 
     def affiche_chemin(self, grille, chemin_list, chemin_str):
         # Affichage de la grille elle-même
@@ -120,7 +114,13 @@ class LeftFrame(Frame):
         self.rescale()
 
     def ecrire_chemin(self, chemin):
-        self.canvas.create_text(2, self.nb_lignes+1/2, text=chemin, font=("Helvetica", 20))
+        self.canvas.create_text(0, self.nb_lignes+1/2, text=chemin, font=("Helvetica", 20), anchor=NW)
+
+    def grille_aleatoire(self):
+        pass
+
+    def grille_manuelle(self):
+        pass
 
 
 class RightFrame(Frame):
@@ -128,22 +128,22 @@ class RightFrame(Frame):
         Frame.__init__(self, parent, padx=10, pady=10)
         self.parent = parent
         self.widget_grilles = None
-        self.opened_widgets = []
+        self.mode_creation = None
+        self.nb_lignes = 0  # Attention, ici ce sont les nombres de lignes et de colonnes à créer
+        self.nb_colonnes = 0  # et non celles présentes au début sur la grille
 
     def clean(self):
-        for i in self.opened_widgets:
+        for i in self.winfo_children():
             i.destroy()
 
     def choice_buttons(self):
         self.clean()
-        open_button = Button(self.parent, text="Récupérer un problème depuis un fichier",
+        open_button = Button(self, text="Récupérer un problème depuis un fichier",
                              command=self.parent.lancer_fichier)
-        create_button = Button(self.parent, text="Créer manuellement un problème",
-                               command=self.parent.lancer_fichier)
-        open_button.pack()
-        create_button.pack()
-        self.opened_widgets.append(open_button)
-        self.opened_widgets.append(create_button)
+        create_button = Button(self, text="Créer manuellement un problème",
+                               command=self.creer_grille)
+        open_button.grid()
+        create_button.grid()
 
     def ouvrir_fichiers(self):
         self.clean()
@@ -154,9 +154,6 @@ class RightFrame(Frame):
         label.grid(column=0, row=0, columnspan=4)
         entry.grid(column=0, row=1, columnspan=3)
         bouton.grid(column=3, row=1)
-        self.opened_widgets.append(label)
-        self.opened_widgets.append(entry)
-        self.opened_widgets.append(bouton)
 
         # On demande enfin la sortie
         label = Label(self, text="Fichier de sortie")
@@ -166,24 +163,18 @@ class RightFrame(Frame):
         label.grid(column=0, row=2, columnspan=4)
         entry.grid(column=0, row=3, columnspan=3)
         bouton.grid(column=3, row=3)
-        self.opened_widgets.append(label)
-        self.opened_widgets.append(entry)
-        self.opened_widgets.append(bouton)
 
         # Lancement de l'algorithme pour toutes les grilles
         validate_all = Button(self, text="Lancer l'algorithme pour toutes les grilles du fichier d'entrée",
                               command=self.parent.lancer_algo)
         validate_all.grid(column=0, row=4, columnspan=4)
-        self.opened_widgets.append(validate_all)
 
         # Lancement de l'algorithme pour une seule grille
         label = Label(self, text="Ou choisir une grille dans le fichier d'entrée")
         label.grid(column=0, row=5, columnspan=4)
-        self.opened_widgets.append(label)
         self.update_widget_grilles()
         bouton_maj = Button(self, text="Mise à jour des grilles", command=self.update_widget_grilles)
         bouton_maj.grid(column=2, row=6, columnspan=2)
-        self.opened_widgets.append(bouton_maj)
 
     def update_widget_grilles(self):
         self.parent.update_grilles()
@@ -204,8 +195,29 @@ class RightFrame(Frame):
                                   command=lambda: self.parent.lancer_grille(combo_liste.index(combo.get())))
         bouton_affichage.grid(column=0, row=7, columnspan=2)
         bouton_lancement.grid(column=2, row=7, columnspan=2)
-        self.opened_widgets.append(combo)
-        self.opened_widgets.append(bouton_lancement)
+
+    def creer_grille(self):
+        self.clean()
+        label = Label(self, text="Choisissez la taille de la grille que vous voulez créer")
+        spin_lignes = Spinbox(self, from_=0, to=100)
+        spin_colonnes = Spinbox(self, from_=0, to=100)
+        label_lignes = Label(self, text="Nombre de lignes :")
+        label_colonnes = Label(self, text="Nombre de colonnes :")
+        label_placement = Label(self, text="Choix du placement des obstables, des points de départ et d'arrivée")
+        self.mode_creation = StringVar()
+        radio_aleatoire = Radiobutton(self, text="Aléatoire", variable=self.mode_creation, value=1)
+        radio_manuel = Radiobutton(self, text="Manuel", variable=self.mode_creation, value=2)
+        bouton_valide = Button(self, text="Générer la grille", command=self.parent.generer_grille)
+
+        label.grid(column=0, row=0, columnspan=4)
+        label_lignes.grid(column=0, row=1, columnspan=2)
+        spin_lignes.grid(column=2, row=1, columnspan=2)
+        label_colonnes.grid(column=0, row=2, columnspan=2)
+        spin_colonnes.grid(column=2, row=2, columnspan=2)
+        label_placement.grid(column=0, row=3, columnspan=4)
+        radio_aleatoire.grid(column=0, row=4, columnspan=2)
+        radio_manuel.grid(column=2, row=4, columnspan=2)
+        bouton_valide.grid(column=1, row=5, columnspan=2)
 
 
 class FenetrePrincipale(Tk):
@@ -240,10 +252,10 @@ class FenetrePrincipale(Tk):
 
     def clear_fenetre(self):
         if self.leftFrame:
-            for i in self.leftFrame.opened_widgets:
+            for i in self.leftFrame.winfo_children():
                 i.destroy()
         if self.rightFrame:
-            for i in self.rightFrame.opened_widgets:
+            for i in self.rightFrame.winfo_children():
                 i.destroy()
 
     def choice_buttons(self):
@@ -274,6 +286,19 @@ class FenetrePrincipale(Tk):
         grille = self.grilles[numero_grille]
         chemin_list, chemin_str = lancement_et_chemin(grille)
         self.leftFrame.affiche_chemin(grille, chemin_list, chemin_str)
+
+    def creer_grille(self):
+        self.rightFrame.creer_grille()
+
+    def generer_grille(self):
+        if self.rightFrame.mode_creation is not None:
+            if self.rightFrame.mode_creation.get() == "Aléatoire":
+                self.rightFrame.nb_lignes = random.randint(0, 100)
+                self.rightFrame.nb_colonnes = self.rightFrame.nb_lignes
+                self.rightFrame.nb_obstacles = random.randint(self.rightFrame.nb_lignes, self.rightFrame.nb_lignes*2)
+                self.leftFrame.grille_aleatoire()
+            if self.rightFrame.mode_creation.get() == "Manuel":
+                self.leftFrame.grille_manuelle()
 
 
 # Méthodes en dehors des classes, communes
