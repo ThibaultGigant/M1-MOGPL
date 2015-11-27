@@ -95,8 +95,7 @@ class LeftFrame(Frame):
                 if lignes[i][j] == '0':
                     self.rectangles[i][j] = rectangle(self.canvas, j, i, j+1, i+1)
                 else:
-                    self.rectangles[i][j] = rectangle(self.canvas,
-                              j, i, j+1, i+1, color=couleur_obstacles)
+                    self.rectangles[i][j] = rectangle(self.canvas, j, i, j+1, i+1, color=couleur_obstacles)
         # Dessin du point de départ du robot avec sa flèche
         self.depart = dessine_depart(self.canvas, int(ligne[1]), int(ligne[0]), rayon, ligne[-1])
         # Dessin du point d'arrivée du robot
@@ -118,22 +117,21 @@ class LeftFrame(Frame):
         self.rescale()
 
     def ecrire_chemin(self, chemin):
-        self.canvas.create_text(0, self.nb_lignes+1/2, text=chemin, font=("Helvetica", 20), anchor=NW)
+        self.canvas.create_text(0, self.nb_lignes+1/2, text=chemin, font=("Helvetica", 10), anchor=NW)
 
     def modifier_grille(self):
-        for i in range(len(self.rectangles)):
-            for j in range(len(self.rectangles[i])):
-                self.canvas.tag_bind(self.rectangles[i][j], "<Button-1>", lambda _: self.toggle_obstacle(i, j))
+        self.canvas.tag_bind("case", "<Button-1>", self.toggle_obstacle)
 
-    def toggle_obstacle(self, x, y):
-        # self.parent.grilles[0][1] est l'ensemble des lignes de la grille
-        # on accède à la valeur du rectangle avec [x][y]
-        if self.parent.grilles[0][1][x][y] == '1':
-            self.parent.grilles[0][1][x][y] = '0'
-            self.canvas.itemconfig(self.rectangles[x][y], fill="white")
+    def toggle_obstacle(self, event):
+        w = event.widget.find_closest(event.x, event.y)
+        ligne = (w[0]-1)//self.nb_lignes
+        colonne = (w[0]-1) % self.nb_colonnes
+        if self.parent.grilles[0][1][ligne][colonne] == '1':
+            self.parent.grilles[0][1][ligne][colonne] = '0'
+            self.canvas.itemconfig(w, fill="white")
         else:
-            self.parent.grilles[0][1][x][y] = '1'
-            self.canvas.itemconfig(self.rectangles[x][y], fill=couleur_obstacles)
+            self.parent.grilles[0][1][ligne][colonne] = '1'
+            self.canvas.itemconfig(w, fill=couleur_obstacles)
 
 
 class RightFrame(Frame):
@@ -398,7 +396,7 @@ def apropos():
 
 
 def rectangle(canvas, x1, y1, x2, y2, color="white", border_color="black"):  # FEFF8E
-    return canvas.create_rectangle(x1, y1, x2, y2, fill=color, outline=border_color)
+    return canvas.create_rectangle(x1, y1, x2, y2, fill=color, outline=border_color, tags="case")
 
 
 def cercle(canvas, x, y, r, color="black"):
