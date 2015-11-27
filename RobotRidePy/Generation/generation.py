@@ -55,6 +55,7 @@ def generer_grille(nb_lignes, nb_colonnes, nb_obstacles):
     grille = [(nb_lignes, nb_colonnes)]
     grille += [generation_lignes(nb_lignes, nb_colonnes, nb_obstacles)]
     grille += [choix_depart_arrivee(grille[1])]
+    return grille
 
 
 def creer_instances(fichier, nb_instances=1, nb_lignes=None, nb_colonnes=None, nb_obstacles=None):

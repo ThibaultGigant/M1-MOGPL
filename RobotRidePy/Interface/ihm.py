@@ -2,13 +2,15 @@ from tkinter.ttk import Combobox
 from tkinter.filedialog import *
 from tkinter.messagebox import *
 from Robot.file_gestion import *
-import os, random
+from Generation.generation import *
+import os
 
 
 apropos_message = """Ce programme est un projet réalisé par Thibault Gigant pour le projet de MOGPL en 2015
 Le but de ce programme est de trouver le chemin le plus rapide d'un robot dans un entrepôt entre deux points"""
 leftframewidth = 600
 leftframeheight = leftframewidth
+couleur_obstacles = "#a28cff"
 
 
 class TopMenu(Menu):
@@ -46,6 +48,8 @@ class LeftFrame(Frame):
         self.pas_colonne = 0
         self.pas_ligne = 0
         self.rectangles = []
+        self.depart = None
+        self.arrivee = None
         self.initialize()
 
     def initialize(self):
@@ -92,11 +96,11 @@ class LeftFrame(Frame):
                     self.rectangles[i][j] = rectangle(self.canvas, j, i, j+1, i+1)
                 else:
                     self.rectangles[i][j] = rectangle(self.canvas,
-                              j, i, j+1, i+1, color="#a28cff")
+                              j, i, j+1, i+1, color=couleur_obstacles)
         # Dessin du point de départ du robot avec sa flèche
-        dessine_depart(self.canvas, int(ligne[1]), int(ligne[0]), rayon, ligne[-1])
+        self.depart = dessine_depart(self.canvas, int(ligne[1]), int(ligne[0]), rayon, ligne[-1])
         # Dessin du point d'arrivée du robot
-        cercle(self.canvas, int(ligne[3]), int(ligne[2]), rayon)
+        self.arrivee = cercle(self.canvas, int(ligne[3]), int(ligne[2]), rayon)
         self.canvas.pack()
 
     def affiche_chemin(self, grille, chemin_list, chemin_str):
@@ -116,11 +120,20 @@ class LeftFrame(Frame):
     def ecrire_chemin(self, chemin):
         self.canvas.create_text(0, self.nb_lignes+1/2, text=chemin, font=("Helvetica", 20), anchor=NW)
 
-    def grille_aleatoire(self):
-        pass
+    def modifier_grille(self):
+        for i in range(len(self.rectangles)):
+            for j in range(len(self.rectangles[i])):
+                self.canvas.tag_bind(self.rectangles[i][j], "<Button-1>", lambda _: self.toggle_obstacle(i, j))
 
-    def grille_manuelle(self):
-        pass
+    def toggle_obstacle(self, x, y):
+        # self.parent.grilles[0][1] est l'ensemble des lignes de la grille
+        # on accède à la valeur du rectangle avec [x][y]
+        if self.parent.grilles[0][1][x][y] == '1':
+            self.parent.grilles[0][1][x][y] = '0'
+            self.canvas.itemconfig(self.rectangles[x][y], fill="white")
+        else:
+            self.parent.grilles[0][1][x][y] = '1'
+            self.canvas.itemconfig(self.rectangles[x][y], fill=couleur_obstacles)
 
 
 class RightFrame(Frame):
@@ -129,8 +142,9 @@ class RightFrame(Frame):
         self.parent = parent
         self.widget_grilles = None
         self.mode_creation = None
-        self.nb_lignes = 0  # Attention, ici ce sont les nombres de lignes et de colonnes à créer
-        self.nb_colonnes = 0  # et non celles présentes au début sur la grille
+        self.nb_lignes = IntVar()  # Attention, ici ce sont les nombres de lignes, colonnes et obstacles à créer
+        self.nb_colonnes = IntVar()  # et non le nombre présent au début sur la grille
+        self.nb_obstacles = IntVar()
 
     def clean(self):
         for i in self.winfo_children():
@@ -199,11 +213,13 @@ class RightFrame(Frame):
     def creer_grille(self):
         self.clean()
         label = Label(self, text="Choisissez la taille de la grille que vous voulez créer")
-        spin_lignes = Spinbox(self, from_=0, to=100)
-        spin_colonnes = Spinbox(self, from_=0, to=100)
+        spin_lignes = Spinbox(self, from_=1, to=100, textvariable=self.nb_lignes)
+        spin_colonnes = Spinbox(self, from_=1, to=100, textvariable=self.nb_colonnes)
+        spin_obstacles = Spinbox(self, from_=0, textvariable=self.nb_obstacles)
         label_lignes = Label(self, text="Nombre de lignes :")
         label_colonnes = Label(self, text="Nombre de colonnes :")
-        label_placement = Label(self, text="Choix du placement des obstables, des points de départ et d'arrivée")
+        label_obstacles = Label(self, text="Nombre d'obstacles :")
+        label_placement = Label(self, text="Choix du placement des obstables, des points de départ et d'arrivée :")
         self.mode_creation = StringVar()
         radio_aleatoire = Radiobutton(self, text="Aléatoire", variable=self.mode_creation, value=1)
         radio_manuel = Radiobutton(self, text="Manuel", variable=self.mode_creation, value=2)
@@ -214,10 +230,69 @@ class RightFrame(Frame):
         spin_lignes.grid(column=2, row=1, columnspan=2)
         label_colonnes.grid(column=0, row=2, columnspan=2)
         spin_colonnes.grid(column=2, row=2, columnspan=2)
-        label_placement.grid(column=0, row=3, columnspan=4)
-        radio_aleatoire.grid(column=0, row=4, columnspan=2)
-        radio_manuel.grid(column=2, row=4, columnspan=2)
-        bouton_valide.grid(column=1, row=5, columnspan=2)
+        label_obstacles.grid(column=0, row=3, columnspan=2)
+        spin_obstacles.grid(column=2, row=3, columnspan=2)
+        label_placement.grid(column=0, row=4, columnspan=4)
+        radio_aleatoire.grid(column=0, row=5, columnspan=2)
+        radio_manuel.grid(column=2, row=5, columnspan=2)
+        bouton_valide.grid(column=1, row=6, columnspan=2)
+
+    def grille_aleatoire(self):
+        self.clean()
+        bouton_modifier_grille = Button(self, text="Modifier la grille", command=self.parent.modifier_grille)
+        bouton_lancement = Button(self,
+                                  text="Lancer l'algorithme sur cette grille",
+                                  command=lambda: self.parent.lancer_grille(0))
+
+        bouton_modifier_grille.grid(column=0, row=0)
+        bouton_lancement.grid(column=1, row=0)
+
+    def modifier_grille(self):
+        self.clean()
+        orientation = StringVar()
+        abscisse_depart = IntVar()
+        ordonnee_depart = IntVar()
+        abscisse_arrivee = IntVar()
+        ordonnee_arrivee = IntVar()
+        orientation.set(self.parent.grilles[0][2][4])
+        abscisse_depart.set(int(self.parent.grilles[0][2][0]))
+        ordonnee_depart.set(int(self.parent.grilles[0][2][1]))
+        abscisse_arrivee.set(int(self.parent.grilles[0][2][2]))
+        ordonnee_arrivee.set(int(self.parent.grilles[0][2][3]))
+        label_depart = Label(self, text="Coordonnées de l'emplacement du Robot au départ :")
+        label_orientation = Label(self, text="Orientation du Robot au départ :")
+        spin_abscisse_depart = Spinbox(self, from_=0, to=self.parent.grilles[0][0][0], textvariable=abscisse_depart)
+        spin_ordonnee_depart = Spinbox(self, from_=0, to=self.parent.grilles[0][0][1], textvariable=ordonnee_depart)
+        combo_orientation = Combobox(self,
+                                     values=("nord", "est", "sud", "ouest"),
+                                     textvariable=orientation,
+                                     state="readonly")
+        label_arrivee = Label(self, text="Coordonnées de l'emplacement du Robot à l'arrivée :")
+        spin_abscisse_arrivee = Spinbox(self, from_=0, to=self.parent.grilles[0][0][0], textvariable=abscisse_arrivee)
+        spin_ordonnee_arrivee = Spinbox(self, from_=0, to=self.parent.grilles[0][0][1], textvariable=ordonnee_arrivee)
+        bouton_maj = Button(self,
+                            text="Mettre à jour",
+                            command=lambda: self.maj_depart_arrivee(abscisse_depart.get(), ordonnee_depart.get(), abscisse_arrivee.get(), ordonnee_arrivee.get(), orientation.get()))
+        bouton_lancement = Button(self, text="Lancer sur cette grille", command=lambda: self.parent.lancer_grille(0))
+        label_depart.grid(column=0, row=0, columnspan=2)
+        spin_abscisse_depart.grid(column=0, row=1)
+        spin_ordonnee_depart.grid(column=1, row=1)
+        label_orientation.grid(column=0, row=2, columnspan=2)
+        combo_orientation.grid(column=0, row=3, columnspan=2)
+        label_arrivee.grid(column=0, row=4, columnspan=2)
+        spin_abscisse_arrivee.grid(column=0, row=5)
+        spin_ordonnee_arrivee.grid(column=1, row=5)
+        bouton_maj.grid(column=0, row=6)
+        bouton_lancement.grid(column=1, row=6)
+
+    def maj_depart_arrivee(self, abs_dep, ord_dep, abs_arr, ord_arr, orientation):
+        self.parent.grilles[0][2][0] = abs_dep
+        self.parent.grilles[0][2][1] = ord_dep
+        self.parent.grilles[0][2][2] = abs_arr
+        self.parent.grilles[0][2][3] = ord_arr
+        self.parent.grilles[0][2][4] = orientation
+        self.parent.afficher_grille(0)
+        self.parent.modifier_grille()
 
 
 class FenetrePrincipale(Tk):
@@ -236,7 +311,7 @@ class FenetrePrincipale(Tk):
 
     def initialize(self):
         self.update_grilles()
-        self.grid()
+        # self.grid()
         self.menu = TopMenu(self)
         self.rightFrame = RightFrame(self)
         self.leftFrame = LeftFrame(self)
@@ -290,15 +365,27 @@ class FenetrePrincipale(Tk):
     def creer_grille(self):
         self.rightFrame.creer_grille()
 
+    def modifier_grille(self):
+        # Pas besoin d'afficher, elle l'est déjà normalement...
+        # self.leftFrame.affiche_grille()
+        self.leftFrame.modifier_grille()
+        self.rightFrame.modifier_grille()
+
     def generer_grille(self):
         if self.rightFrame.mode_creation is not None:
-            if self.rightFrame.mode_creation.get() == "Aléatoire":
-                self.rightFrame.nb_lignes = random.randint(0, 100)
-                self.rightFrame.nb_colonnes = self.rightFrame.nb_lignes
-                self.rightFrame.nb_obstacles = random.randint(self.rightFrame.nb_lignes, self.rightFrame.nb_lignes*2)
-                self.leftFrame.grille_aleatoire()
-            if self.rightFrame.mode_creation.get() == "Manuel":
-                self.leftFrame.grille_manuelle()
+            if self.rightFrame.mode_creation.get() == '1':
+                self.grilles = [generer_grille(self.rightFrame.nb_lignes.get(),
+                                               self.rightFrame.nb_colonnes.get(),
+                                               self.rightFrame.nb_obstacles.get())]
+                self.leftFrame.affiche_grille(self.grilles[0])
+                self.leftFrame.rescale()
+                self.rightFrame.grille_aleatoire()
+            if self.rightFrame.mode_creation.get() == '2':
+                lignes = [['0' for i in range(self.rightFrame.nb_colonnes.get())] for j in range(self.rightFrame.nb_lignes.get())]
+                ligne = ['0', '0', str(self.rightFrame.nb_lignes.get()), str(self.rightFrame.nb_colonnes.get()), "sud"]
+                self.grilles = [[(self.rightFrame.nb_lignes.get(), self.rightFrame.nb_colonnes.get()), lignes, ligne]]
+                self.afficher_grille(0)
+                self.modifier_grille()
 
 
 # Méthodes en dehors des classes, communes
@@ -315,16 +402,17 @@ def rectangle(canvas, x1, y1, x2, y2, color="white", border_color="black"):  # F
 
 
 def cercle(canvas, x, y, r, color="black"):
-    canvas.create_oval(x-r, y-r, x+r, y+r, fill=color, outline=color)
+    return canvas.create_oval(x-r, y-r, x+r, y+r, fill=color, outline=color)
 
 
 def dessine_depart(canvas, x, y, echelle, direction, color="red"):
     # triangle(canvas, x, y, echelle, direction, color)
-    cercle(canvas, x, y, echelle, color)
-    canvas.create_line(x, y,
+    cerc = cercle(canvas, x, y, echelle, color)
+    line = canvas.create_line(x, y,
                        x + ((direction == "est") - (direction == "ouest")),
                        y + ((direction == "sud") - (direction == "nord")),
                        width=max(echelle//4, 8), arrow=LAST, fill=color)
+    return cerc, line
 
 
 # Construit un triangle équilatéral dans la direction voulue
