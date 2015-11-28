@@ -2,8 +2,13 @@ from tkinter.ttk import Combobox
 from tkinter.filedialog import *
 from tkinter.messagebox import *
 from Robot.file_gestion import *
-from Generation.generation import *
+from Generation.generation import generer_grille
+from Stats.stats import *
 import os
+import matplotlib
+matplotlib.use('TkAgg')
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
+from matplotlib.figure import Figure
 
 
 apropos_message = """Ce programme est un projet réalisé par Thibault Gigant pour le projet de MOGPL en 2015
@@ -28,6 +33,7 @@ class TopMenu(Menu):
         menu1 = Menu(self, tearoff=0)
         menu1.add_command(label="Ouvrir", command=self.parent.lancer_fichier)
         menu1.add_command(label="Créer", command=self.parent.creer_grille)
+        menu1.add_command(label="Statistiques", command=self.parent.lancer_statistiques)
         menu1.add_separator()
         menu1.add_command(label="Quitter", command=self.parent.quit)
         self.add_cascade(label="Fichier", menu=menu1)
@@ -133,6 +139,20 @@ class LeftFrame(Frame):
             self.parent.grilles[0][1][ligne][colonne] = '1'
             self.canvas.itemconfig(w, fill=couleur_obstacles)
 
+    def affiche_patienter(self):
+        self.clean()
+        label = Label(self, text="Patientez s'il vous plaît\nCalcul des statistiques en cours", font=("Helvetica", 50))
+        label.grid()
+
+    def affiche_plot(self, figure):
+        self.clean()
+        self.canvas = FigureCanvasTkAgg(figure, master=self)
+        self.canvas.show()
+        self.canvas.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
+        toolbar = NavigationToolbar2TkAgg(self.canvas, self)
+        toolbar.update()
+        self.canvas._tkcanvas.pack(side=TOP, fill=BOTH, expand=1)
+
 
 class RightFrame(Frame):
     def __init__(self, parent):
@@ -154,8 +174,11 @@ class RightFrame(Frame):
                              command=self.parent.lancer_fichier)
         create_button = Button(self, text="Créer manuellement un problème",
                                command=self.creer_grille)
+        stats_button = Button(self, text="Lancer un jeu de statistiques",
+                              command=self.lancer_statistiques)
         open_button.grid()
         create_button.grid()
+        stats_button.grid()
 
     def ouvrir_fichiers(self):
         self.clean()
@@ -296,6 +319,91 @@ class RightFrame(Frame):
         self.parent.lancer_grille(0)
         self.parent.modifier_grille()
 
+    def lancer_statistiques(self):
+        self.clean()
+        label = Label(self, text="Quelles statistiques voulez-vous lancer ?")
+        btn_taille = Button(self, text="En fonction de la taille de la grille", command=self.stats_taille)
+        btn_obstacles = Button(self, text="En fonction du nombre d'obstacles", command=self.stats_obstacles)
+        label.grid(column=0, row=0)
+        btn_taille.grid(column=0, row=1)
+        btn_obstacles.grid(column=0, row=2)
+
+    def stats_taille(self):
+        self.clean()
+        label = Label(self, text="Statistiques en fonction de la taille de la grille")
+        taille_min = IntVar()
+        taille_min.set(10)
+        taille_max = IntVar()
+        taille_max.set(10)
+        pas = IntVar()
+        pas.set(10)
+        echelle = StringVar()
+        echelle.set("log")
+        label_min = Label(self, text="Taille minimale de la grille :")
+        spin_taille_min = Spinbox(self, from_=10, to=100, increment=10, textvariable=taille_min)
+        label_max = Label(self, text="Taille maximale de la grille :")
+        spin_taille_max = Spinbox(self, from_=50, to=150, increment=10, textvariable=taille_max)
+        label_pas = Label(self, text="Pas d'incrément de taille de la grille :")
+        spin_pas = Spinbox(self, from_=10, to=140, increment=10, textvariable=pas)
+        label_echelle = Label(self, text="Echelle du pas de temps :")
+        radio_linear = Radiobutton(self, text="Linéaire", variable=echelle, value="linear")
+        radio_log = Radiobutton(self, text="Logarithmique", variable=echelle, value="log")
+        btn_lancement = Button(self, text="Lancer !",
+                               command=lambda: self.parent.lancer_stats_taille(spin_taille_min.get(), spin_taille_max.get(), spin_pas.get(), echelle.get()))
+        label.grid(column=0, row=0, columnspan=3)
+        label_min.grid(column=0, row=1)
+        spin_taille_min.grid(column=1, row=1, columnspan=2)
+        label_max.grid(column=0, row=2)
+        spin_taille_max.grid(column=1, row=2, columnspan=2)
+        label_pas.grid(column=0, row=3)
+        spin_pas.grid(column=1, row=3, columnspan=2)
+        label_echelle.grid(column=0, row=4)
+        radio_linear.grid(column=1, row=4)
+        radio_log.grid(column=2, row=4)
+        btn_lancement.grid(column=1, row=5)
+
+    def stats_obstacles(self):
+        self.clean()
+        label = Label(self, text="Statistiques en fonction du nombre d'obstacles")
+        taille_grille = IntVar()
+        taille_grille.set(10)
+        max_obstacles = IntVar()
+        max_obstacles.set(10)
+        pas = IntVar()
+        pas.set(10)
+        echelle = StringVar()
+        echelle.set("log")
+        label_taille = Label(self, text="Taille de la grille :")
+        spin_taille = Spinbox(self, from_=10, to=100, increment=10, textvariable=taille_grille)
+        label_max = Label(self, text="Nombre maximum d'obstacles :")
+        spin_max_obstacles = Spinbox(self, from_=50, to=150, increment=10, textvariable=max_obstacles)
+        label_pas = Label(self, text="Pas d'incrément du nombre d'obstacles :")
+        spin_pas = Spinbox(self, from_=10, to=140, increment=10, textvariable=pas)
+        label_echelle = Label(self, text="Echelle du pas de temps :")
+        radio_linear = Radiobutton(self, text="Linéaire", variable=echelle, value="linear")
+        radio_log = Radiobutton(self, text="Logarithmique", variable=echelle, value="log")
+        btn_lancement = Button(self, text="Lancer !",
+                               command=lambda: self.parent.lancer_stats_obstacles(spin_taille.get(), spin_max_obstacles.get(), spin_pas.get(), echelle.get()))
+        label.grid(column=0, row=0, columnspan=3)
+        label_taille.grid(column=0, row=1)
+        spin_taille.grid(column=1, row=1, columnspan=2)
+        label_max.grid(column=0, row=2)
+        spin_max_obstacles.grid(column=1, row=2, columnspan=2)
+        label_pas.grid(column=0, row=3)
+        spin_pas.grid(column=1, row=3, columnspan=2)
+        label_echelle.grid(column=0, row=4)
+        radio_linear.grid(column=1, row=4)
+        radio_log.grid(column=2, row=4)
+        btn_lancement.grid(column=1, row=5)
+
+
+class BoutonMenuPrincipal(Frame):
+    def __init__(self, parent):
+        Frame.__init__(self, parent)
+        self.parent = parent
+        bouton_menu = Button(self, text="Retour au menu principal", command=self.parent.menu_principal)
+        bouton_menu.pack(side=BOTTOM)
+
 
 class FenetrePrincipale(Tk):
     def __init__(self, parent):
@@ -303,22 +411,24 @@ class FenetrePrincipale(Tk):
         self.parent = parent
         self.entree = StringVar()
         self.sortie = StringVar()
-        self.entree.set("/Users/Tigig/Documents/Travail/M1/M1-MOGPL/RobotRidePy/Instances/x9y10o10.dat")
-        self.sortie.set("/Users/Tigig/Documents/Travail/M1/M1-MOGPL/RobotRidePy/Instances/Résultats/x9y10o10out.dat")
+        self.entree.set("Instances/x9y10o10.dat")
+        self.sortie.set("Instances/Résultats/x9y10o10out.dat")
         self.menu = None
         self.leftFrame = None
         self.rightFrame = None
+        self.bouton_menu_principal = None
         self.grilles = []
         self.initialize()
 
     def initialize(self):
         self.update_grilles()
-        # self.grid()
         self.menu = TopMenu(self)
         self.rightFrame = RightFrame(self)
         self.leftFrame = LeftFrame(self)
+        self.bouton_menu_principal = BoutonMenuPrincipal(self)
         self.leftFrame.pack(side=LEFT, padx=10, pady=10)
-        self.rightFrame.pack(side=RIGHT, padx=10, pady=10)
+        self.rightFrame.pack(side=TOP, padx=10, pady=10)
+        self.bouton_menu_principal.pack(side=BOTTOM, padx=10, pady=10)
         self.menu_principal()
 
     def update_grilles(self):
@@ -389,6 +499,25 @@ class FenetrePrincipale(Tk):
                 self.afficher_grille(0)
                 self.modifier_grille()
 
+    def lancer_statistiques(self):
+        self.rightFrame.lancer_statistiques()
+
+    def lancer_stats_taille(self, min_taille, max_taille, pas, echelle):
+        self.leftFrame.affiche_patienter()
+        f = Figure()
+        titre = "Temps d'exécution en fonction de\nla taille d'un côté de la grille"
+        plt = f.add_subplot(111, title=titre, ylabel="Temps", xlabel="Taille de la grille", yscale=echelle)
+        affiche_stats_taille(int(min_taille), int(max_taille), int(pas), plt)
+        self.leftFrame.affiche_plot(f)
+
+    def lancer_stats_obstacles(self, taille_grille, max_obstacles, pas, echelle):
+        self.leftFrame.affiche_patienter()
+        f = Figure()
+        titre = "Temps d'exécution d'une grille de " + taille_grille + " de côté\nen fonction du nombre d'obstacles"
+        plt = f.add_subplot(111, title=titre, ylabel="Temps", xlabel="Nombre d'obstacles", yscale=echelle)
+        affiche_stats_obstacles(int(taille_grille), int(max_obstacles), int(pas), plt)
+        self.leftFrame.affiche_plot(f)
+
 
 # Méthodes en dehors des classes, communes
 def choisir_fichier(titre):
@@ -411,9 +540,9 @@ def dessine_depart(canvas, x, y, echelle, direction, color="red"):
     # triangle(canvas, x, y, echelle, direction, color)
     cerc = cercle(canvas, x, y, echelle, color)
     line = canvas.create_line(x, y,
-                       x + ((direction == "est") - (direction == "ouest")),
-                       y + ((direction == "sud") - (direction == "nord")),
-                       width=max(echelle//4, 8), arrow=LAST, fill=color)
+                              x + ((direction == "est") - (direction == "ouest")),
+                              y + ((direction == "sud") - (direction == "nord")),
+                              width=max(echelle//4, 8), arrow=LAST, fill=color)
     return cerc, line
 
 
