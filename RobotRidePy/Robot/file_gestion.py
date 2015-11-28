@@ -1,15 +1,14 @@
 from Robot.classes import *
 import time
-"""
-
-"""
 
 
 def get_grilles(fichier_entree):
     """
-        S'occupe d'ouvrir les fichiers, puis récupérer les grilles sans les résoudre
-        :param fichier_entree: fichier où récupérer les données
-        :type fichier_entree: str
+    S'occupe d'ouvrir les fichiers, puis récupérer les grilles sans les résoudre
+    :param fichier_entree: fichier où récupérer les données
+    :type fichier_entree: str
+    :return: Les grilles générées à partir des données du fichier d'entrée
+    :rtype: list
     """
     grilles = []
     fp = open(fichier_entree, "r")
@@ -36,6 +35,12 @@ def get_grilles(fichier_entree):
 
 
 def creation_robots(grilles):
+    """
+    Crée tous les robots des grilles passées en paramètre
+    :param grilles: liste de grilles récupérées d'un fichier
+    :type grilles: list
+    :return: liste des robots créés et la liste des temps pris pour la création des graphes correspondant à ces robots
+    """
     temps_creation = []
     robots = []
     for grille in grilles:
@@ -50,6 +55,12 @@ def creation_robots(grilles):
 
 
 def lancement_depuis_robots(robots):
+    """
+    Calcule le chemin le plus rapide emprunté par chaque robot de la liste passée en paramètres
+    :param robots: liste de robots
+    :type robots: list
+    :return: Liste des chemins les plus rapides correspondant à chaque robot de la liste
+    """
     temps_calcul = []
     chemins = []
     for robot in robots:
@@ -61,16 +72,45 @@ def lancement_depuis_robots(robots):
 
 
 def lancement_depuis_grille(grille):
+    """
+    Génère le robot correspondant à la grille passée en paramètre, puis retourne le temps de création du graphe
+    ainsi que le temps de calcul du chemin le plus rapide.
+    Cette fonction sera surtout utilisée pour le calcul des statistiques
+    :param grille: représente un dépôt avec ses données :
+        - couple donnant le nombre de lignes et de colonnes
+        - liste de listes de caractères 0 ou 1 représentant les lignes du dépôt
+        - liste de caractères donnant les coordonées du robot au départ, à l'arrivée, et sa direction de départ
+    :type grille: list
+    :return: temps de création du graphe correspondant à la grille et temps de calcul du chemin le plus rapide
+    """
     robots, temps_creation = creation_robots([grille])
     return temps_creation, lancement_depuis_robots(robots)[1]
 
 
 def lancement_et_chemin(grille):
+    """
+    Génère le robot correspondant à la grille passée en paramètre,
+    puis renvoie la liste des coordonnées des points empruntés par le robot dans son chemin le plus rapide
+    :param grille: représente un dépôt avec ses données :
+        - couple donnant le nombre de lignes et de colonnes
+        - liste de listes de caractères 0 ou 1 représentant les lignes du dépôt
+        - liste de caractères donnant les coordonées du robot au départ, à l'arrivée, et sa direction de départ
+    :type grille: list
+    :return: la liste des coordonnées des points empruntés par le robot dans son chemin le plus rapide
+    :rtype: list
+    """
     robots, temps_creation = creation_robots([grille])
     return robots[0].coordonnees_chemin()
 
 
 def ecriture(chemins, fichier_sortie):
+    """
+    Ecrit le chemin passé en paramètre dans le fichier de sortie passé en paramètre
+    :param chemins: liste de chaînes de caractères donnant les plus courts chemins d'un robot dans certaines grilles
+    :param fichier_sortie: chemin absolu ou relatif du fichier de sortie où écrire les plus courts chemins
+    :type chemins: list
+    :type fichier_sortie: str
+    """
     fp = open(fichier_sortie, "w")
     for chemin in chemins:
         fp.write(chemin + "\n")
@@ -79,11 +119,12 @@ def ecriture(chemins, fichier_sortie):
 
 def lecture(fichier_entree, fichier_sortie):
     """
-        S'occupe d'ouvrir les fichiers, récupérer les données des problèmes et les appliquer
-        :param fichier_entree: fichier où récupérer les données
-        :param fichier_sortie: fichier où écrire le résultat des calculs
-        :type fichier_entree: str
-        :type fichier_sortie: str
+    S'occupe d'ouvrir les fichiers, récupérer les données des problèmes et les appliquer
+    :param fichier_entree: fichier où récupérer les données
+    :param fichier_sortie: fichier où écrire le résultat des calculs
+    :type fichier_entree: str
+    :type fichier_sortie: str
+    :return: listes des chemins empruntés, des temps de création des graphes, et des temps de calcul
     """
     grilles = get_grilles(fichier_entree)
 
@@ -91,7 +132,4 @@ def lecture(fichier_entree, fichier_sortie):
     chemins, temps_calcul = lancement_depuis_robots(robots)
 
     ecriture(chemins, fichier_sortie)
-
-    # print("Moyenne de temps de création", sum(temps_creation)/len(temps_creation))
-    # print("Moyenne de temps de calcul", sum(temps_calcul)/len(temps_calcul))
     return chemins, temps_creation, temps_calcul

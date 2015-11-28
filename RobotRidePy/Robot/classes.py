@@ -9,7 +9,7 @@ HelpMessage = "Le fichier d'entrée doit correspondre aux données de l'énoncé
 
 class Orientation(Enum):
     """
-        Classe énumérant les orientations possibles
+    Classe énumérant les orientations possibles
     """
     nord = 0
     est = 1
@@ -19,7 +19,7 @@ class Orientation(Enum):
 
 class Node:
     """
-        Classe décrivant les noeuds, c'est à dire les croisements avec orientation
+    Classe décrivant les noeuds, c'est à dire les croisements avec orientation
     """
 
     def __init__(self, x, y, orientation):
@@ -32,24 +32,29 @@ class Node:
 
     def ajoute_adjacent(self, sommet):
         """
-            Ajoute un sommet à la liste d'adjacence du sommet courant
-            :param sommet: sommet à ajouter
-            :type sommet: Node
+        Ajoute un sommet à la liste d'adjacence du sommet courant
+        :param sommet: sommet à ajouter
+        :type sommet: Node
         """
         self.adjacents.append(sommet)
 
     def calculer_chemin_str(self):
         """
-            Calcule le chemin pour arriver au sommet de départ du robot depuis le sommet courant
-            :return: Chaine de caractère représentant le temps de parcours et le chemin emprunté par le robot
-            :rtype: str
+        Retourne le chemin pour arriver au sommet de départ du robot depuis le sommet
+        Pour cela on part de la destination et on retrouve son père, puis le père de celui-ci et ainsi de suite
+        jusqu'à arriver au point de départ
+        :return: Chaine de caractère représentant le temps de parcours et le chemin emprunté par le robot
+        :rtype: str
         """
         temps = 0
         res = ""
         n = self
+
+        # On vérifie qu'il existe bien un chemin jusqu'au point d'arrivée,
+        # pour cela on regarde si le père du point d'arrivée a été modifié
         if n.pere is None:
             return "-1"
-        while n.pere != -1:
+        while n.pere != -1:  # condition d'arrêt "-1" car seul le point de départ a "-1" comme père
             if n.pere.x == n.x and n.pere.y == n.y:
                 if ((n.orientation.value - n.pere.orientation.value) % 4) == 1:
                     res = " D" + res
@@ -65,9 +70,9 @@ class Node:
 
     def calculer_chemin_liste(self):
         """
-            Calcule le chemin pour arriver au sommet de départ du robot depuis le sommet courant
-            :return: liste de couples de coordonnées des points sur le chemin emprunté par le robot
-            :rtype: list
+        Calcule le chemin pour arriver au sommet de départ du robot depuis le sommet courant
+        :return: liste de couples de coordonnées des points sur le chemin emprunté par le robot
+        :rtype: list
         """
         n = self
         res = []
@@ -82,7 +87,7 @@ class Node:
 
 class Graph:
     """
-        Classe décrivant le graphe associé à un problème
+    Classe décrivant le graphe associé à un problème
     """
 
     def __init__(self, nb_lignes, nb_colonnes, lignes):
@@ -95,15 +100,15 @@ class Graph:
 
     def get_sommet(self, x, y, orientation):
         """
-            Retourne le sommet demandé en fonction de ses coordonnées et son orientation
-            :param x: coordonnée de la ligne voulue
-            :param y: coordonnée de la colonne voulue
-            :param orientation: Orientation du sommet voulu
-            :type x: int
-            :type y: int
-            :type orientation: Orientation
-            :return: Sommet correspondant aux données
-            :rtype: Node
+        Retourne le sommet demandé en fonction de ses coordonnées et son orientation
+        :param x: coordonnée de la ligne voulue
+        :param y: coordonnée de la colonne voulue
+        :param orientation: Orientation du sommet voulu
+        :type x: int
+        :type y: int
+        :type orientation: Orientation
+        :return: Sommet correspondant aux données
+        :rtype: Node
         """
         if (x, y, orientation) in self.sommets.keys():
             return self.sommets[(x, y, orientation)]
@@ -112,15 +117,15 @@ class Graph:
 
     def remplir_graphe(self, nb_lignes, nb_colonnes, lignes):
         """
-            Remplissage Complet du graphe lors de l'initialisation,
-            on supprimera les arcs inutilisables par le robot plus tard
+        Remplissage Complet du graphe lors de l'initialisation,
+        on supprimera les arcs inutilisables par le robot plus tard
 
-            :param nb_lignes: Nombre de lignes de 1m du dépôt
-            :param nb_colonnes: Nombres de colonnes de 1m du dépôt
-            :param lignes: liste de listes, chacune représentant une ligne du dépôt
-            :type nb_lignes: int
-            :type nb_colonnes: int
-            :type lignes: list
+        :param nb_lignes: Nombre de lignes de 1m du dépôt
+        :param nb_colonnes: Nombres de colonnes de 1m du dépôt
+        :param lignes: liste de listes, chacune représentant une ligne du dépôt
+        :type nb_lignes: int
+        :type nb_colonnes: int
+        :type lignes: list
         """
         # self.ajoute_premiere_ligne(nb_colonnes, lignes)
         # for i in range(1, nb_lignes):
@@ -131,13 +136,13 @@ class Graph:
 
     def ajoute_sommets(self, nb_lignes, nb_colonnes, lignes):
         """
-            Crée tous les sommets du graphe, puis fait le tri pour supprimer ceux inaccessibles par le robot
-            :param nb_lignes: nombre de lignes du dépôt
-            :param nb_colonnes: nombre de colonnes du dépôt
-            :param lignes: liste de listes, chacune représentant une ligne du dépôt
-            :type nb_lignes: int
-            :type nb_colonnes: int
-            :type lignes: list
+        Crée tous les sommets du graphe, puis fait le tri pour supprimer ceux inaccessibles par le robot
+        :param nb_lignes: nombre de lignes du dépôt
+        :param nb_colonnes: nombre de colonnes du dépôt
+        :param lignes: liste de listes, chacune représentant une ligne du dépôt
+        :type nb_lignes: int
+        :type nb_colonnes: int
+        :type lignes: list
         """
         # Ajout de tous les sommets
         for i in range(nb_lignes+1):
@@ -160,11 +165,11 @@ class Graph:
 
     def ajoute_premiere_ligne(self, nb_colonnes, lignes):
         """
-            Crée les sommets de la première "ligne" du graphe
-            :param nb_colonnes: nombre de colonnes du dépôt
-            :param lignes: liste de listes, chacune représentant une ligne du dépôt
-            :type nb_colonnes: int
-            :type lignes: list
+        Crée les sommets de la première "ligne" du graphe
+        :param nb_colonnes: nombre de colonnes du dépôt
+        :param lignes: liste de listes, chacune représentant une ligne du dépôt
+        :type nb_colonnes: int
+        :type lignes: list
         """
         # ajout premier élément
         if lignes[0][0] == '0':
@@ -182,13 +187,13 @@ class Graph:
 
     def ajoute_ligne_intermediaire(self, numero_ligne, nb_colonnes, lignes):
         """
-            Crée les sommet d'une "ligne" intermédiaire du graphe
-            :param numero_ligne: indice de la ligne à remplir
-            :param nb_colonnes: nombre de colonnes du dépôt
-            :param lignes: liste de listes, chacune représentant une ligne du dépôt
-            :type numero_ligne: int
-            :type nb_colonnes: int
-            :type lignes: list
+        Crée les sommet d'une "ligne" intermédiaire du graphe
+        :param numero_ligne: indice de la ligne à remplir
+        :param nb_colonnes: nombre de colonnes du dépôt
+        :param lignes: liste de listes, chacune représentant une ligne du dépôt
+        :type numero_ligne: int
+        :type nb_colonnes: int
+        :type lignes: list
         """
         # ajout premier élément
         if lignes[numero_ligne][0] == '0' and lignes[numero_ligne - 1][0] == '0':
@@ -207,13 +212,13 @@ class Graph:
 
     def ajoute_derniere_ligne(self, nb_lignes, nb_colonnes, lignes):
         """
-            Crée les sommets de la dernière "ligne" du graphe
-            :param nb_lignes: nombre de lignes du dépôt
-            :param nb_colonnes: nombre de colonnes du dépôt
-            :param lignes: liste de listes, chacune représentant une ligne du dépôt
-            :type nb_lignes: int
-            :type nb_colonnes: int
-            :type lignes: list
+        Crée les sommets de la dernière "ligne" du graphe
+        :param nb_lignes: nombre de lignes du dépôt
+        :param nb_colonnes: nombre de colonnes du dépôt
+        :param lignes: liste de listes, chacune représentant une ligne du dépôt
+        :type nb_lignes: int
+        :type nb_colonnes: int
+        :type lignes: list
         """
         # ajout premier élément
         if lignes[-1][0] == '0':
@@ -231,12 +236,12 @@ class Graph:
 
     def ajoute_arcs(self, nb_lignes, nb_colonnes):
         """
-            Ajoute ses arcs à chaque sommet: pour cela on ajoute les noeuds accessibles
-            en une seconde à la liste d'adjacence
-            :param nb_lignes: nombre de lignes du dépôt
-            :param nb_colonnes: nombre de colonnes du dépôt
-            :type nb_lignes: int
-            :type nb_colonnes: int
+        Ajoute ses arcs à chaque sommet: pour cela on ajoute les noeuds accessibles
+        en une seconde à la liste d'adjacence
+        :param nb_lignes: nombre de lignes du dépôt
+        :param nb_colonnes: nombre de colonnes du dépôt
+        :type nb_lignes: int
+        :type nb_colonnes: int
         """
         # On parcourt tous les noeuds du graphe pour ajouter leurs adjacents
         for noeud in self.sommets.values():
@@ -289,26 +294,11 @@ class Graph:
             if n:
                 noeud.ajoute_adjacent(n)
 
-    def affiche_graphe(self):
-        """
-            Affiche dans la console une représentation du dépôt avec ses obstacles
-        """
-        sep = "—" * (len(self.lignes[0]) * 2 + 1)
-        for ligne in self.lignes:
-            print(sep)
-            for j in ligne:
-                if j == "0":
-                    print("|O", end="")
-                else:
-                    print("|X", end="")
-            print("|")
-        print(sep)
-
 
 class Robot:
     """
-        Classe définissant le Robot avec sa position, sa direction et toutes les données nécessaires à l'algorithme
-        Il portera les fonctions nécessaires à l'algorithme de parcours en largeur
+    Classe définissant le Robot avec sa position, sa direction et toutes les données nécessaires à l'algorithme
+    Il portera les fonctions nécessaires à l'algorithme de parcours en largeur
     """
 
     def __init__(self, ligne, graphe):
@@ -332,29 +322,36 @@ class Robot:
 
     def parcours_en_largeur(self):
         """
-            Effectue un parcours en largueur depuis le point de départ du robot
-            Le père de chaque sommet visité est mis à jour
+        Effectue un parcours en largueur depuis le point de départ du robot
+        Le père de chaque sommet visité est mis à jour
         """
         ouverts = [self.depart]  # Représente les sommets ouverts
         done = False
         while ouverts and not done:
-            noeud = ouverts.pop(0)
-            for i in noeud.adjacents:
+            noeud = ouverts.pop(0)  # Suppression de la liste du premier sommet de la liste des ouverts
+            for i in noeud.adjacents:  # On regarde les noeuds adjacents à celui-ci
+                # Si ces noeuds ont déjà un père, c'est qu'ils ont déjà été visités,
+                # et donc qu'il existe un plus court chemin que celui-ci,
+                # on ne rajoute donc pas une nouvelle fois ce noeud aux noeuds ouverts
                 if i.pere is None:
                     i.pere = noeud
                     ouverts.append(i)
-                    if (i.x, i.y) == self.arrivee:
+                    if (i.x, i.y) == self.arrivee:  # Losqu'on arrive au point d'arrivée, pas la peine d'aller plus loin
                         done = True
                         break
 
     def affiche_resultat(self):
         """
-            Recherche le chemin le plus rapide entre le point de départ et d'arrivée du robot,
-            puis calcule la chaine de caractère correspondant à ce chemin
-            :return: chemin le plus rapide
-            :rtype: str
+        Recherche le chemin le plus rapide entre le point de départ et d'arrivée du robot,
+        puis calcule la chaine de caractère correspondant à ce chemin
+        :return: chemin le plus rapide
+        :rtype: str
         """
+        # On effectue le parcours en largeur,
+        # au moins les pères des points sur le chemin jusqu'à l'arrivée sont mis à jour
         self.parcours_en_largeur()
+
+        # Comme on s'est arrêté au premier sommet correspondant au point d'arrivée, on cherche le sommet correspondant
         for i in Orientation:
             n = self.graphe.get_sommet(self.arrivee[0], self.arrivee[1], i)
             if n.pere:
@@ -363,10 +360,10 @@ class Robot:
 
     def coordonnees_chemin(self):
         """
-            Recherche le chemin le plus rapide entre le point de départ et d'arrivée du robot,
-            puis trouve les coordonnées des points empruntés et les retourne
-            :return: chemin le plus rapide
-            :rtype: list
+        Recherche le chemin le plus rapide entre le point de départ et d'arrivée du robot,
+        puis trouve les coordonnées des points empruntés et les retourne
+        :return: coordonnées des points empruntés par le robot dans son chemin le plus rapide vers le point d'arrivée
+        :rtype: list
         """
         self.parcours_en_largeur()
         for i in Orientation:
