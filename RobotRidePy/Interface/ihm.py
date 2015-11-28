@@ -108,7 +108,7 @@ class LeftFrame(Frame):
         # Ajout du chemin par des lignes
         for i in range(1, len(chemin_list)):
             self.canvas.create_line(chemin_list[i-1][1], chemin_list[i-1][0],
-                                    chemin_list[i][1], chemin_list[i][0], width=5)
+                                    chemin_list[i][1], chemin_list[i][0], width=3)
         # on redessine le point de départ pour que ce soit plus "joli"
         ligne = grille[2]
         rayon = 1/2
@@ -213,7 +213,7 @@ class RightFrame(Frame):
         label = Label(self, text="Choisissez la taille de la grille que vous voulez créer")
         spin_lignes = Spinbox(self, from_=1, to=100, textvariable=self.nb_lignes)
         spin_colonnes = Spinbox(self, from_=1, to=100, textvariable=self.nb_colonnes)
-        spin_obstacles = Spinbox(self, from_=0, textvariable=self.nb_obstacles)
+        spin_obstacles = Spinbox(self, from_=0, to=3000, textvariable=self.nb_obstacles)
         label_lignes = Label(self, text="Nombre de lignes :")
         label_colonnes = Label(self, text="Nombre de colonnes :")
         label_obstacles = Label(self, text="Nombre d'obstacles :")
@@ -271,7 +271,7 @@ class RightFrame(Frame):
         bouton_maj = Button(self,
                             text="Mettre à jour",
                             command=lambda: self.maj_depart_arrivee(abscisse_depart.get(), ordonnee_depart.get(), abscisse_arrivee.get(), ordonnee_arrivee.get(), orientation.get()))
-        bouton_lancement = Button(self, text="Lancer sur cette grille", command=lambda: self.parent.lancer_grille(0))
+        bouton_lancement = Button(self, text="Lancer sur cette grille", command=self.lancement_modifie)
         label_depart.grid(column=0, row=0, columnspan=2)
         spin_abscisse_depart.grid(column=0, row=1)
         spin_ordonnee_depart.grid(column=1, row=1)
@@ -290,6 +290,10 @@ class RightFrame(Frame):
         self.parent.grilles[0][2][3] = ord_arr
         self.parent.grilles[0][2][4] = orientation
         self.parent.afficher_grille(0)
+        self.parent.modifier_grille()
+
+    def lancement_modifie(self):
+        self.parent.lancer_grille(0)
         self.parent.modifier_grille()
 
 
@@ -395,7 +399,7 @@ def apropos():
     showinfo("Robot Ride !", apropos_message)
 
 
-def rectangle(canvas, x1, y1, x2, y2, color="white", border_color="black"):  # FEFF8E
+def rectangle(canvas, x1, y1, x2, y2, color="white", border_color="gray"):  # FEFF8E
     return canvas.create_rectangle(x1, y1, x2, y2, fill=color, outline=border_color, tags="case")
 
 
