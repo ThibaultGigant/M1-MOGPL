@@ -117,8 +117,8 @@ class Graph:
 
     def remplir_graphe(self, nb_lignes, nb_colonnes, lignes):
         """
-        Remplissage Complet du graphe lors de l'initialisation,
-        on supprimera les arcs inutilisables par le robot plus tard
+        Remplissage Complet du graphe en ajoutant les sommets ligne par ligne, puis en ajoutant les arcs,
+        c'est-à-dire ajouter les sommets adjacents de chaque sommet dans sa liste d'adjacence
 
         :param nb_lignes: Nombre de lignes de 1m du dépôt
         :param nb_colonnes: Nombres de colonnes de 1m du dépôt
@@ -127,41 +127,11 @@ class Graph:
         :type nb_colonnes: int
         :type lignes: list
         """
-        # self.ajoute_premiere_ligne(nb_colonnes, lignes)
-        # for i in range(1, nb_lignes):
-        #     self.ajoute_ligne_intermediaire(i, nb_colonnes, lignes)
-        # self.ajoute_derniere_ligne(nb_lignes, nb_colonnes, lignes)
-        self.ajoute_sommets(nb_lignes, nb_colonnes, lignes)
+        self.ajoute_premiere_ligne(nb_colonnes, lignes)
+        for i in range(1, nb_lignes):
+            self.ajoute_ligne_intermediaire(i, nb_colonnes, lignes)
+        self.ajoute_derniere_ligne(nb_lignes, nb_colonnes, lignes)
         self.ajoute_arcs(nb_lignes, nb_colonnes)
-
-    def ajoute_sommets(self, nb_lignes, nb_colonnes, lignes):
-        """
-        Crée tous les sommets du graphe, puis fait le tri pour supprimer ceux inaccessibles par le robot
-        :param nb_lignes: nombre de lignes du dépôt
-        :param nb_colonnes: nombre de colonnes du dépôt
-        :param lignes: liste de listes, chacune représentant une ligne du dépôt
-        :type nb_lignes: int
-        :type nb_colonnes: int
-        :type lignes: list
-        """
-        # Ajout de tous les sommets
-        for i in range(nb_lignes+1):
-            for j in range(nb_colonnes+1):
-                for k in Orientation:
-                    self.sommets[(i, j, k)] = Node(i, j, k)
-        # Suppression des sommets inaccessibles à cause des objets
-        for i in range(nb_lignes):
-            for j in range(nb_colonnes):
-                if lignes[i][j] == '1':
-                    for k in Orientation:
-                        if self.get_sommet(i, j, k):
-                            del self.sommets[(i, j, k)]
-                        if self.get_sommet(i+1, j, k):
-                            del self.sommets[(i+1, j, k)]
-                        if self.get_sommet(i, j+1, k):
-                            del self.sommets[(i, j+1, k)]
-                        if self.get_sommet(i+1, j+1, k):
-                            del self.sommets[(i+1, j+1, k)]
 
     def ajoute_premiere_ligne(self, nb_colonnes, lignes):
         """

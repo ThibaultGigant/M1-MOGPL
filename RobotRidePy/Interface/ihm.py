@@ -462,8 +462,10 @@ class RightFrame(Frame):
         taille_max.set(10)
         pas = IntVar()
         pas.set(10)
-        echelle = StringVar()
-        echelle.set("log")
+        echelle_ord = StringVar()
+        echelle_ord.set("log")
+        echelle_abs = StringVar()
+        echelle_abs.set("log")
 
         # Création des éléments demandant les variables à l'utilisateur
         label = Label(self, text="Statistiques en fonction de la taille de la grille")
@@ -473,11 +475,14 @@ class RightFrame(Frame):
         spin_taille_max = Spinbox(self, from_=50, to=4000, increment=10, textvariable=taille_max)
         label_pas = Label(self, text="Pas d'incrément de taille de la grille :")
         spin_pas = Spinbox(self, from_=10, to=1000, increment=10, textvariable=pas)
-        label_echelle = Label(self, text="Echelle du pas de temps :")
-        radio_linear = Radiobutton(self, text="Linéaire", variable=echelle, value="linear")
-        radio_log = Radiobutton(self, text="Logarithmique", variable=echelle, value="log")
+        label_echelle = Label(self, text="Echelle de l'axe du temps :")
+        radio_linear = Radiobutton(self, text="Linéaire", variable=echelle_ord, value="linear")
+        radio_log = Radiobutton(self, text="Logarithmique", variable=echelle_ord, value="log")
+        label_echelle_abs = Label(self, text="Echelle de l'axe des tailles :")
+        radio_linear_abs = Radiobutton(self, text="Linéaire", variable=echelle_abs, value="linear")
+        radio_log_abs = Radiobutton(self, text="Logarithmique", variable=echelle_abs, value="log")
         btn_lancement = Button(self, text="Lancer !",
-                               command=lambda: self.parent.lancer_stats_taille(spin_taille_min.get(), spin_taille_max.get(), spin_pas.get(), echelle.get()))
+                               command=lambda: self.parent.lancer_stats_taille(spin_taille_min.get(), spin_taille_max.get(), spin_pas.get(), echelle_ord.get(), echelle_abs.get()))
 
         # Positionnement de ces éléments
         label.grid(column=0, row=0, columnspan=3)
@@ -490,7 +495,10 @@ class RightFrame(Frame):
         label_echelle.grid(column=0, row=4)
         radio_linear.grid(column=1, row=4)
         radio_log.grid(column=2, row=4)
-        btn_lancement.grid(column=1, row=5)
+        label_echelle_abs.grid(column=0, row=5)
+        radio_linear_abs.grid(column=1, row=5)
+        radio_log_abs.grid(column=2, row=5)
+        btn_lancement.grid(column=1, row=6)
 
     def stats_obstacles(self):
         """
@@ -505,8 +513,10 @@ class RightFrame(Frame):
         max_obstacles.set(10)
         pas = IntVar()
         pas.set(10)
-        echelle = StringVar()
-        echelle.set("log")
+        echelle_ord = StringVar()
+        echelle_ord.set("log")
+        echelle_abs = StringVar()
+        echelle_abs.set("log")
 
         # Création des éléments demandant les variables à l'utilisateur
         label = Label(self, text="Statistiques en fonction du nombre d'obstacles")
@@ -516,11 +526,14 @@ class RightFrame(Frame):
         spin_max_obstacles = Spinbox(self, from_=50, to=150, increment=10, textvariable=max_obstacles)
         label_pas = Label(self, text="Pas d'incrément du nombre d'obstacles :")
         spin_pas = Spinbox(self, from_=10, to=140, increment=10, textvariable=pas)
-        label_echelle = Label(self, text="Echelle du pas de temps :")
-        radio_linear = Radiobutton(self, text="Linéaire", variable=echelle, value="linear")
-        radio_log = Radiobutton(self, text="Logarithmique", variable=echelle, value="log")
+        label_echelle = Label(self, text="Echelle de l'axe du temps :")
+        radio_linear = Radiobutton(self, text="Linéaire", variable=echelle_ord, value="linear")
+        radio_log = Radiobutton(self, text="Logarithmique", variable=echelle_ord, value="log")
+        label_echelle_abs = Label(self, text="Echelle de l'axe des tailles :")
+        radio_linear_abs = Radiobutton(self, text="Linéaire", variable=echelle_abs, value="linear")
+        radio_log_abs = Radiobutton(self, text="Logarithmique", variable=echelle_abs, value="log")
         btn_lancement = Button(self, text="Lancer !",
-                               command=lambda: self.parent.lancer_stats_obstacles(spin_taille.get(), spin_max_obstacles.get(), spin_pas.get(), echelle.get()))
+                               command=lambda: self.parent.lancer_stats_obstacles(spin_taille.get(), spin_max_obstacles.get(), spin_pas.get(), echelle_ord.get(), echelle_abs.get()))
 
         # Positionnement de ces éléments
         label.grid(column=0, row=0, columnspan=3)
@@ -533,7 +546,10 @@ class RightFrame(Frame):
         label_echelle.grid(column=0, row=4)
         radio_linear.grid(column=1, row=4)
         radio_log.grid(column=2, row=4)
-        btn_lancement.grid(column=1, row=5)
+        label_echelle_abs.grid(column=0, row=5)
+        radio_linear_abs.grid(column=1, row=5)
+        radio_log_abs.grid(column=2, row=5)
+        btn_lancement.grid(column=1, row=6)
 
 
 class BoutonMenuPrincipal(Frame):
@@ -675,13 +691,14 @@ class FenetrePrincipale(Tk):
         """
         self.rightFrame.lancer_statistiques()
 
-    def lancer_stats_taille(self, min_taille, max_taille, pas, echelle):
+    def lancer_stats_taille(self, min_taille, max_taille, pas, echelle_ord, echelle_abs):
         """
         Lance le calcul des statistiques du temps d'exécution en fonction de la taille de la grille
         :param min_taille: taille minimale de la grille
         :param max_taille: taille maximale de la grille
         :param pas: pas de taille entre chaque calcul de statistiques
-        :param echelle: échelle à utiliser (linéaire ou logarithmique) pour l'axe des ordonnées
+        :param echelle_ord: échelle à utiliser (linéaire ou logarithmique) pour l'axe des ordonnées
+        :param echelle_abs: échelle à utiliser (linéaire ou logarithmique) pour l'axe des abscisses
         :type min_taille: str
         :type max_taille: str
         :type pas: str
@@ -690,27 +707,31 @@ class FenetrePrincipale(Tk):
         self.leftFrame.affiche_patienter()
         f = Figure()
         titre = "Temps d'exécution en fonction de\nla taille d'un côté de la grille"
-        plt = f.add_subplot(111, title=titre, ylabel="Temps", xlabel="Taille de la grille", yscale=echelle)
+        plt = f.add_subplot(111, title=titre, ylabel="Temps", xlabel="Taille de la grille",
+                            yscale=echelle_ord, xscale=echelle_abs)
         affiche_stats_taille(int(min_taille), int(max_taille), int(pas), plt)
         self.leftFrame.affiche_plot(f)
 
-    def lancer_stats_obstacles(self, taille_grille, max_obstacles, pas, echelle):
+    def lancer_stats_obstacles(self, taille_grille, max_obstacles, pas, echelle_ord, echelle_abs):
         """
         Lance le calcul des statistiques du temps d'exécution en fonction du nombre d'obstacles de la grille,
         la taille de la grille restant fixe
         :param taille_grille: taille des grilles à générer pour les calculs
         :param max_obstacles: nombre maximum d'obstacles
         :param pas: pas du nombre d'obstacles entre chaque calcul de statistiques
-        :param echelle: échelle à utiliser (linéaire ou logarithmique) pour l'axe des ordonnées
+        :param echelle_ord: échelle à utiliser (linéaire ou logarithmique) pour l'axe des ordonnées
+        :param echelle_abs: échelle à utiliser (linéaire ou logarithmique) pour l'axe des abscisses
         :type taille_grille: str
         :type max_obstacles: str
         :type pas: str
-        :type echelle: str
+        :type echelle_ord: str
+        :type echelle_abs: str
         """
         self.leftFrame.affiche_patienter()
         f = Figure()
         titre = "Temps d'exécution d'une grille de " + taille_grille + " de côté\nen fonction du nombre d'obstacles"
-        plt = f.add_subplot(111, title=titre, ylabel="Temps", xlabel="Nombre d'obstacles", yscale=echelle)
+        plt = f.add_subplot(111, title=titre, ylabel="Temps", xlabel="Nombre d'obstacles",
+                            yscale=echelle_ord, xscale=echelle_abs)
         affiche_stats_obstacles(int(taille_grille), int(max_obstacles), int(pas), plt)
         self.leftFrame.affiche_plot(f)
 
