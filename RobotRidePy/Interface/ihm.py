@@ -529,7 +529,7 @@ class RightFrame(Frame):
         label_echelle = Label(self, text="Echelle de l'axe du temps :")
         radio_linear = Radiobutton(self, text="Linéaire", variable=echelle_ord, value="linear")
         radio_log = Radiobutton(self, text="Logarithmique", variable=echelle_ord, value="log")
-        label_echelle_abs = Label(self, text="Echelle de l'axe des tailles :")
+        label_echelle_abs = Label(self, text="Echelle de l'axe du nombre d'obstacles :")
         radio_linear_abs = Radiobutton(self, text="Linéaire", variable=echelle_abs, value="linear")
         radio_log_abs = Radiobutton(self, text="Logarithmique", variable=echelle_abs, value="log")
         btn_lancement = Button(self, text="Lancer !",
