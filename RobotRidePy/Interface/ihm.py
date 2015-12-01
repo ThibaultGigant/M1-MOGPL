@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
 try:
     try:
+        from tkinter import *
         from tkinter.ttk import Combobox
         from tkinter.filedialog import *
         from tkinter.messagebox import *
     except:
+        from Tkinter import *
         from ttk import Combobox
         from tkFileDialog import *
         from tkMessageBox import *
@@ -201,7 +203,6 @@ class LeftFrame(Frame):
         """
         # Récupération du rectangle sur lequel on a cliqué
         w = event.widget.find_closest(event.x, event.y)
-        print(w)
         ligne = (w[0]-1)//self.nb_colonnes
         colonne = (w[0]-1) % self.nb_colonnes
         # Changement de la grille elle-même en changeant la case correspondante,
@@ -646,7 +647,6 @@ class RightFrame(Frame):
         :type fichier: str
         """
         grilles = generer_base_statistiques_taille(int(min_taille), int(max_taille), int(pas), int(nb_instances))
-        print(grilles)
         ecriture_grilles(grilles, fichier)
         self.clean()
         label = Label(self, text="Instances générées et écrites dans le fichier")
