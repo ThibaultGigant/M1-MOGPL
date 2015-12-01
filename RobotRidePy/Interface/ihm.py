@@ -730,7 +730,7 @@ class RightFrame(Frame):
         radio_abs_lin = Radiobutton(self, text="Linéaire", variable=echelle_abs, value="linear")
         radio_abs_log = Radiobutton(self, text="Logarithmique", variable=echelle_abs, value="log")
         btn_valider = Button(self, text="Mettre à jour le graphique",
-                             command=lambda: self.parent.afficher_stats_base_donnees_taille(tailles, tps_creation, tps_calcul, echelle_ord.get(), echelle_abs.get()))
+                             command=lambda: self.parent.afficher_stats_taille(tailles, tps_creation, tps_calcul, echelle_ord.get(), echelle_abs.get()))
 
         label.grid(column=0, row=0, columnspan=2)
         label_ord.grid(column=0, row=1, columnspan=2)
@@ -755,7 +755,7 @@ class RightFrame(Frame):
         radio_abs_lin = Radiobutton(self, text="Linéaire", variable=echelle_abs, value="linear")
         radio_abs_log = Radiobutton(self, text="Logarithmique", variable=echelle_abs, value="log")
         btn_valider = Button(self, text="Mettre à jour le graphique",
-                             command=lambda: self.parent.afficher_stats_base_donnees_obstacles(taille, nb_obstacles, tps_creation, tps_calcul, echelle_ord.get(), echelle_abs.get()))
+                             command=lambda: self.parent.afficher_stats_obstacles(taille, nb_obstacles, tps_creation, tps_calcul, echelle_ord.get(), echelle_abs.get()))
 
         label.grid(column=0, row=0, columnspan=2)
         label_ord.grid(column=0, row=1, columnspan=2)
@@ -925,12 +925,9 @@ class FenetrePrincipale(Tk):
         :type echelle_abs: str
         """
         self.leftFrame.affiche_patienter()
-        f = Figure()
-        titre = "Temps d'exécution en fonction de\nla taille d'un côté de la grille"
-        plt = f.add_subplot(111, title=titre, ylabel="Temps", xlabel="Taille de la grille",
-                            yscale=echelle_ord, xscale=echelle_abs)
-        affiche_stats_taille(int(min_taille), int(max_taille), int(pas), plt)
-        self.leftFrame.affiche_plot(f)
+        tailles, tps_creation, tps_calcul = recup_stats_taille(int(min_taille), int(max_taille), int(pas))
+        self.afficher_stats_taille(tailles, tps_creation, tps_calcul, echelle_ord, echelle_abs)
+        self.rightFrame.stats_demande_echelle_taille(tailles, tps_creation, tps_calcul)
 
     def lancer_stats_obstacles(self, taille_grille, max_obstacles, pas, echelle_ord, echelle_abs):
         """
@@ -948,12 +945,10 @@ class FenetrePrincipale(Tk):
         :type echelle_abs: str
         """
         self.leftFrame.affiche_patienter()
-        f = Figure()
-        titre = "Temps d'exécution d'une grille de " + taille_grille + " de côté\nen fonction du nombre d'obstacles"
-        plt = f.add_subplot(111, title=titre, ylabel="Temps", xlabel="Nombre d'obstacles",
-                            yscale=echelle_ord, xscale=echelle_abs)
-        affiche_stats_obstacles(int(taille_grille), int(max_obstacles), int(pas), plt)
-        self.leftFrame.affiche_plot(f)
+        nb_obstacles, tps_creation, tps_calcul = recup_stats_obstacles(int(taille_grille),
+                                                                               int(max_obstacles), int(pas))
+        self.afficher_stats_obstacles(taille_grille, nb_obstacles, tps_creation, tps_calcul, echelle_ord, echelle_abs)
+        self.rightFrame.stats_demande_echelle_obstacles(taille_grille, nb_obstacles, tps_creation, tps_calcul)
 
     def lancer_stats_base_donnees_taille(self, fichier):
         """
@@ -963,15 +958,16 @@ class FenetrePrincipale(Tk):
         """
         self.leftFrame.affiche_patienter()
         tailles, tps_creation, tps_calcul = recup_stats_fichier_taille(fichier)
-        self.afficher_stats_base_donnees_taille(tailles, tps_creation, tps_calcul)
+        self.afficher_stats_taille(tailles, tps_creation, tps_calcul)
         self.rightFrame.stats_demande_echelle_taille(tailles, tps_creation, tps_calcul)
 
-    def afficher_stats_base_donnees_taille(self, tailles, tps_creation, tps_calcul, echelle_ord='linear', echelle_abs='linear'):
+    def afficher_stats_taille(self, tailles, tps_creation, tps_calcul,
+                              echelle_ord='linear', echelle_abs='linear'):
         f = Figure()
         titre = "Temps d'exécution en fonction de\nla taille d'un côté de la grille"
         plt = f.add_subplot(111, title=titre, ylabel="Temps", xlabel="Taille de la grille",
                             yscale=echelle_ord, xscale=echelle_abs)
-        affiche_stats_fichier(tailles, tps_creation, tps_calcul, plt)
+        affiche_stats(tailles, tps_creation, tps_calcul, plt)
         self.leftFrame.affiche_plot(f)
 
     def lancer_stats_base_donnees_obstacles(self, fichier):
@@ -982,15 +978,16 @@ class FenetrePrincipale(Tk):
         """
         self.leftFrame.affiche_patienter()
         taille, nb_obstacles, tps_creation, tps_calcul = recup_stats_fichier_obstacles(fichier)
-        self.afficher_stats_base_donnees_obstacles(taille, nb_obstacles, tps_creation, tps_calcul)
+        self.afficher_stats_obstacles(taille, nb_obstacles, tps_creation, tps_calcul)
         self.rightFrame.stats_demande_echelle_obstacles(taille, nb_obstacles, tps_creation, tps_calcul)
 
-    def afficher_stats_base_donnees_obstacles(self, taille, nb_obstacles, tps_creation, tps_calcul, echelle_ord='linear', echelle_abs='linear'):
+    def afficher_stats_obstacles(self, taille, nb_obstacles, tps_creation, tps_calcul,
+                                 echelle_ord='linear', echelle_abs='linear'):
         f = Figure()
         titre = "Temps d'exécution d'une grille de " + str(taille) + " de côté\nen fonction du nombre d'obstacles"
         plt = f.add_subplot(111, title=titre, ylabel="Temps", xlabel="Nombre d'obstacles",
                             yscale=echelle_ord, xscale=echelle_abs)
-        affiche_stats_fichier(nb_obstacles, tps_creation, tps_calcul, plt)
+        affiche_stats(nb_obstacles, tps_creation, tps_calcul, plt)
         self.leftFrame.affiche_plot(f)
 
     def enregistrer_grille(self, numero_grille):

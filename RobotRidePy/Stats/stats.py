@@ -25,18 +25,15 @@ def temps_execution(nb_lignes, nb_obstacles):
     return np.mean(temps_creation), np.mean(temps_calcul)
 
 
-def affiche_stats_taille(min_taille, max_taille, pas, plt):
+def recup_stats_taille(min_taille, max_taille, pas):
     """
-    Modification de l'objet matplotlib (graphique) qui représentera les temps d'exécution
-    en fonction de la taille de la grille de départ
+    Calcule les statistiques de temps d'exécution de grilles aléatoires en fonction de la taille des grilles
     :param min_taille: taille minimale des grilles
     :param max_taille: taille maximale des grilles
     :param pas: pas de taille entre deux grilles
-    :param plt: objet matplotlib (plot) qui sera affiché
     :type min_taille: int
     :type max_taille: int
     :type pas: int
-    :type plt: subplot (matplotlib)
     """
     temps_creation = []
     temps_calcul = []
@@ -47,27 +44,20 @@ def affiche_stats_taille(min_taille, max_taille, pas, plt):
         tps1, tps2 = temps_execution(i, i)
         temps_creation.append(tps1)
         temps_calcul.append(tps2)
-    temps_creation = np.array(temps_creation)
-    temps_calcul = np.array(temps_calcul)
-    # Ajout des courbes les unes après les autres, ainsi que de la légende
-    plt.plot(tab_nb_lignes, temps_creation, 'g^--', label="Temps de création du graphe")
-    plt.plot(tab_nb_lignes, temps_calcul, 'bs--', label="Temps de calcul du chemin")
-    plt.plot(tab_nb_lignes, temps_creation + temps_calcul, 'ro-', label="Temps total")
-    plt.legend(loc='best')
+
+    return np.array(tab_nb_lignes), np.array(temps_creation), np.array(temps_calcul)
 
 
-def affiche_stats_obstacles(nb_lignes, max_obstacles, pas, plt):
+def recup_stats_obstacles(nb_lignes, max_obstacles, pas):
     """
-    Modification de l'objet matplotlib (graphique) qui représentera les temps d'exécution
-    en fonction du nombre d'obstacles de la grille
+    Calcule les statistiques de temps d'exécution de grilles aléatoires de même taille
+    en fonction du nombre d'obstacles des grilles
     :param nb_lignes: nombre de lignes et de colonnes des grilles à générer et à étudier
     :param max_obstacles: nombre d'obstacles maximum dans les instances à générer
     :param pas: pas entre deux nombre d'obstacles dans les instances à générer
-    :param plt: objet matplotlib (plot) qui sera affiché
     :type nb_lignes: int
     :type max_obstacles: int
     :type pas: int
-    :type plt: subplot (matplotlib)
     :return:
     """
     temps_creation = []
@@ -79,13 +69,8 @@ def affiche_stats_obstacles(nb_lignes, max_obstacles, pas, plt):
         tps1, tps2 = temps_execution(nb_lignes, i)
         temps_creation.append(tps1)
         temps_calcul.append(tps2)
-    temps_creation = np.array(temps_creation)
-    temps_calcul = np.array(temps_calcul)
-    # Ajout des courbes les unes après les autres, ainsi que de la légende
-    plt.plot(tab_nb_obstacles, temps_creation, 'g^--', label="Temps de création du graphe")
-    plt.plot(tab_nb_obstacles, temps_calcul, 'bs--', label="Temps de calcul du chemin")
-    plt.plot(tab_nb_obstacles, temps_creation + temps_calcul, 'ro-', label="Temps total")
-    plt.legend(loc='best')
+
+    return np.array(tab_nb_obstacles), np.array(temps_creation), np.array(temps_calcul)
 
 
 def recup_stats_fichier_taille(fichier):
@@ -170,7 +155,7 @@ def recup_stats_fichier_obstacles(fichier):
     return taille, np.array(nb_obstacles), np.array(tps_creation), np.array(tps_calcul)
 
 
-def affiche_stats_fichier(donnees, tps_creation, tps_calcul, plt):
+def affiche_stats(donnees, tps_creation, tps_calcul, plt):
     """
     Modification de l'objet matplotlib (graphique) <plt> affichant les temps d'exécution des instances de grilles
     en fonction des données passées en paramètre
