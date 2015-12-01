@@ -21,7 +21,7 @@ from matplotlib.figure import Figure
 
 
 apropos_message = """Ce programme est un projet réalisé par Thibault Gigant pour le projet de MOGPL en 2015
-Le but de ce programme est de trouver le chemin le plus rapide entre deux points d'un robot dans un entrepôt"""
+Le but de ce programme est de trouver le chemin le plus rapide d'un robot entre deux points d'un dépôt"""
 leftframewidth = 600
 leftframeheight = leftframewidth
 couleur_obstacles = "#a28cff"
@@ -110,6 +110,16 @@ class LeftFrame(Frame):
         :type tps_calc: list
         """
         self.clean()
+        if tps_creat:
+            label = Label(self,
+                          text="La moyenne du temps de création de graphe sur ce fichier est : " +
+                               str(np.mean(tps_creat)) + " secondes")
+            label.pack()
+        if tps_calc:
+            label = Label(self,
+                          text="La moyenne du temps de calcul du chemin le plus rapide sur ce fichier est : " +
+                               str(np.mean(tps_calc)) + " secondes")
+            label.pack()
         for i in range(len(resultat)):
             label = Label(self, text="Problème n°"+str(i))
             label.pack()
@@ -327,6 +337,11 @@ class RightFrame(Frame):
         bouton_modification.grid(column=0, row=8, columnspan=4)
 
     def modification_grille_ouverte(self, numero_grille):
+        """
+        Lance l'interface permettant de modifier la grille choisie dans la liste déroulante
+        :param numero_grille: indice de la grille dans la liste
+        :type numero_grille: int
+        """
         self.parent.grilles[0] = self.parent.grilles[numero_grille]
         self.parent.modifier_grille()
 
@@ -447,7 +462,7 @@ class RightFrame(Frame):
                                command=self.stats_obstacles)
         btn_creer_instances = Button(self, text="Créer un fichier qui servira\nde base de données de référence",
                                      command=self.stats_creer_instances)
-        btn_lancer_instance = Button(self, text="Lancer un statistiques sur\nun fichier créé préalablement",
+        btn_lancer_instance = Button(self, text="Lancer des statistiques sur\nun fichier créé préalablement",
                                      command=self.stats_ouvrir_instances)
         label.grid(column=0, row=0)
         btn_taille.grid(column=0, row=1)
@@ -616,6 +631,20 @@ class RightFrame(Frame):
         btn_lancement.grid(column=0, row=6, columnspan=3)
 
     def stats_generer_instances_taille(self, min_taille, max_taille, pas, nb_instances, fichier):
+        """
+        Génère des grilles aléatoires avec les paramètres spécifiés en vue de créer une base de données statistiques
+        puis les écrit dans un fichier
+        :param min_taille: taille minimale des grilles
+        :param max_taille: taille maximale des grilles
+        :param pas: pas entre deux tailles de grille
+        :param nb_instances: nombre d'instances créées pour chaque catégorie
+        :param fichier: fichier de sortie où écrire le résultat
+        :type min_taille: str
+        :type max_taille: str
+        :type pas: str
+        :type nb_instances: str
+        :type fichier: str
+        """
         grilles = generer_base_statistiques_taille(int(min_taille), int(max_taille), int(pas), int(nb_instances))
         print(grilles)
         ecriture_grilles(grilles, fichier)
@@ -674,6 +703,22 @@ class RightFrame(Frame):
         btn_lancement.grid(column=0, row=7, columnspan=3)
 
     def stats_generer_instances_obstacles(self, taille, min_obstacles, max_obstacles, pas, nb_instances, fichier):
+        """
+        Génère des grilles aléatoires avec les paramètres spécifiés en vue de créer une base de données statistiques
+        puis les écrit dans un fichier
+        :param taille: taille des grilles à générer
+        :param min_obstacles: nombre minimal d'obstacles présents dans les grilles
+        :param max_obstacles: nombre maximal d'obstacles présents dans les grilles
+        :param pas: pas entre deux quantités d'obstacles par grille
+        :param nb_instances: nombre d'instances créées pour chaque catégorie
+        :param fichier: fichier de sortie où écrire le résultat
+        :type taille: str
+        :type min_obstacles: str
+        :type max_obstacles: str
+        :type pas: str
+        :type nb_instances: str
+        :type fichier: str
+        """
         grilles = generer_base_statistiques_obstacles(int(taille), int(min_obstacles), int(max_obstacles),
                                                       int(pas), int(nb_instances))
         ecriture_grilles(grilles, fichier)
@@ -711,12 +756,30 @@ class RightFrame(Frame):
         btn_lancement.grid(column=0, row=4, columnspan=4)
 
     def stats_affiche_base_donnees(self, fichier, type):
+        """
+        Lance le programme menant à l'affichage d'une base de données récupérée dans un fichier,
+        selon le type de statistiques voulu
+        :param fichier: fichier où récupérer les données
+        :param type: type de statistiques = en fonction de la taille des grilles ou du nombre d'obstacles
+        :type fichier: str
+        :type type: str
+        """
         if type == "taille":
             self.parent.lancer_stats_base_donnees_taille(fichier)
         else:
             self.parent.lancer_stats_base_donnees_obstacles(fichier)
 
     def stats_demande_echelle_taille(self, tailles, tps_creation, tps_calcul):
+        """
+        Permet la modification de l'échelle du graphe situé en partie gauche
+        sur un graphe dépendant de la taille
+        :param tailles: tableau des tailles des grilles
+        :param tps_creation: tableau recensant les temps de création des grilles
+        :param tps_calcul: tableau recensant les temps de calcul des grilles
+        :type tailles: np.array
+        :type tps_creation: np.array
+        :type tps_calcul: np.array
+        """
         self.clean()
         echelle_ord = StringVar()
         echelle_abs = StringVar()
@@ -742,6 +805,18 @@ class RightFrame(Frame):
         btn_valider.grid(column=0, row=5, columnspan=2)
 
     def stats_demande_echelle_obstacles(self, taille, nb_obstacles, tps_creation, tps_calcul):
+        """
+        Permet la modification de l'échelle du graphe situé en partie gauche
+        sur un graphe dépendant du nombre d'obstacles
+        :param taille: taille des grilles
+        :param nb_obstacles: tableau représentant les nombres d'obstacles des graphes
+        :param tps_creation: tableau représentant les temps de création des graphes selon les nombres d'obstacles
+        :param tps_calcul: tableau représentant les temps de calcul des graphes selon les nombres d'obstacles
+        :type taille: int
+        :type nb_obstacles: np.array
+        :type tps_creation: np.array
+        :type tps_calcul: np.array
+        """
         self.clean()
         echelle_ord = StringVar()
         echelle_abs = StringVar()
@@ -767,6 +842,11 @@ class RightFrame(Frame):
         btn_valider.grid(column=0, row=5, columnspan=2)
 
     def enregistrer_grille(self, numero_grille):
+        """
+        Permet l'enregistrement d'une grille dont l'indice dans la liste des grilles est passé en paramètres
+        :param numero_grille: indice de la grille dans la liste des grilles en self.parent.grilles
+        :type numero_grille: int
+        """
         self.clean()
 
         label = Label(self, text="Dans quel fichier voulez-vous enregistrer cette grille ?")
@@ -963,6 +1043,19 @@ class FenetrePrincipale(Tk):
 
     def afficher_stats_taille(self, tailles, tps_creation, tps_calcul,
                               echelle_ord='linear', echelle_abs='linear'):
+        """
+        Provoque l'apparition du graphique du temps en fonction de la taille des graphes
+        :param tailles: tableau des tailles de grilles
+        :param tps_creation: tableau des temps de création de graphe
+        :param tps_calcul: tableau des temps de calcul du chemin
+        :param echelle_ord: échelle de l'axe des ordonnées à utiliser pour l'affichage
+        :param echelle_abs: échelle de l'axe des abscisses à utiliser pour l'affichage
+        :type tailles: np.array
+        :type tps_creation: np.array
+        :type tps_calcul: np.array
+        :type echelle_ord: str
+        :type echelle_abs: str
+        """
         f = Figure()
         titre = "Temps d'exécution en fonction de\nla taille d'un côté de la grille"
         plt = f.add_subplot(111, title=titre, ylabel="Temps", xlabel="Taille de la grille",
@@ -983,6 +1076,21 @@ class FenetrePrincipale(Tk):
 
     def afficher_stats_obstacles(self, taille, nb_obstacles, tps_creation, tps_calcul,
                                  echelle_ord='linear', echelle_abs='linear'):
+        """
+        Provoque l'apparition du graphique du temps en fonction du nombre d'obstacles
+        :param taille: taille des grilles
+        :param nb_obstacles: tableau du nombre d'obstacles
+        :param tps_creation: tableau des temps de création des graphes
+        :param tps_calcul: tableau des temps de calcul du chemin
+        :param echelle_ord: échelle de l'axe des ordonnées à utiliser pour l'affichage
+        :param echelle_abs: échelle de l'axe des abscisses à utiliser pour l'affichage
+        :type taille: int
+        :type nb_obstacles: np.array
+        :type tps_creation: np.array
+        :type tps_calcul: np.array
+        :type echelle_ord: str
+        :type echelle_abs: str
+        """
         f = Figure()
         titre = "Temps d'exécution d'une grille de " + str(taille) + " de côté\nen fonction du nombre d'obstacles"
         plt = f.add_subplot(111, title=titre, ylabel="Temps", xlabel="Nombre d'obstacles",
@@ -991,9 +1099,18 @@ class FenetrePrincipale(Tk):
         self.leftFrame.affiche_plot(f)
 
     def enregistrer_grille(self, numero_grille):
+        """
+        Provoque l'apparition d'un formulaire permettant d'enregistrer la grille passée en paramètre
+        :param numero_grille: indice de la grille à enregistrer dans la liste des grilles
+        :type numero_grille: int
+        """
         self.rightFrame.enregistrer_grille(numero_grille)
 
     def ecrire_grille(self, numero_grille):
+        """
+        Provoque l'écriture de la grille dont le numéro est passé en paramètre
+        :param numero_grille: indice de la grille à enregistrer dans la liste des grilles
+        """
         ecriture_grilles([self.grilles[numero_grille]], self.sortie.get())
         self.rightFrame.clean()
         label = Label(self.rightFrame, text="Grille écrite dans le fichier")
