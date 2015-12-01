@@ -305,9 +305,9 @@ class RightFrame(Frame):
         # Lancement de l'algorithme pour une seule grille sélectionnée du fichier d'entrée
         label = Label(self, text="Ou choisir une grille dans le fichier d'entrée")
         label.grid(column=0, row=5, columnspan=4)
-        self.update_widget_grilles()
         bouton_maj = Button(self, text="Mise à jour des grilles", command=self.update_widget_grilles)
         bouton_maj.grid(column=2, row=6, columnspan=2)
+        self.update_widget_grilles()
 
     def update_widget_grilles(self):
         """
