@@ -1,8 +1,17 @@
-from tkinter.ttk import Combobox
-from tkinter.filedialog import *
-from tkinter.messagebox import *
+# -*- coding: utf-8 -*-
+try:
+    try:
+        from tkinter.ttk import Combobox
+        from tkinter.filedialog import *
+        from tkinter.messagebox import *
+    except:
+        from ttk import Combobox
+        from tkFileDialog import *
+        from tkMessageBox import *
+except:
+    raise ImportError('Wrapper Tk non disponible')
 from Robot.file_gestion import *
-from Generation.generation import generer_grille
+from Generation.generation import *
 from Stats.stats import *
 import os
 import matplotlib
@@ -223,7 +232,6 @@ class RightFrame(Frame):
     def __init__(self, parent):
         Frame.__init__(self, parent, padx=10, pady=10)
         self.parent = parent
-        self.mode_creation = None
         self.nb_lignes = IntVar()  # Attention, ici ce sont les nombres de lignes, colonnes et obstacles à créer
         self.nb_colonnes = IntVar()  # et non le nombre présent au début sur la grille
         self.nb_obstacles = IntVar()
@@ -247,7 +255,7 @@ class RightFrame(Frame):
                              command=self.parent.lancer_fichier)
         create_button = Button(self, text="Créer manuellement un problème",
                                command=self.creer_grille)
-        stats_button = Button(self, text="Lancer un jeu de statistiques",
+        stats_button = Button(self, text="Faire des statistiques",
                               command=self.lancer_statistiques)
         open_button.grid()
         create_button.grid()
@@ -278,7 +286,7 @@ class RightFrame(Frame):
         bouton.grid(column=3, row=3)
 
         # Partie pour le lancement de l'algorithme sur toutes les grilles du fichier d'entrée
-        validate_all = Button(self, text="Lancer l'algorithme pour toutes les grilles du fichier d'entrée",
+        validate_all = Button(self, text="Lancer l'algorithme\npour toutes les grilles\ndu fichier d'entrée",
                               command=self.parent.lancer_algo)
         validate_all.grid(column=0, row=4, columnspan=4)
 
@@ -328,9 +336,6 @@ class RightFrame(Frame):
         label_colonnes = Label(self, text="Nombre de colonnes :")
         label_obstacles = Label(self, text="Nombre d'obstacles :")
         label_placement = Label(self, text="Choix du placement des obstables, des points de départ et d'arrivée :")
-        self.mode_creation = StringVar()
-        radio_aleatoire = Radiobutton(self, text="Aléatoire", variable=self.mode_creation, value=1)
-        radio_manuel = Radiobutton(self, text="Manuel", variable=self.mode_creation, value=2)
         bouton_valide = Button(self, text="Générer la grille", command=self.parent.generer_grille)
 
         # Positionnement de ces éléments dans la "frame"
@@ -342,25 +347,7 @@ class RightFrame(Frame):
         label_obstacles.grid(column=0, row=3, columnspan=2)
         spin_obstacles.grid(column=2, row=3, columnspan=2)
         label_placement.grid(column=0, row=4, columnspan=4)
-        radio_aleatoire.grid(column=0, row=5, columnspan=2)
-        radio_manuel.grid(column=2, row=5, columnspan=2)
-        bouton_valide.grid(column=1, row=6, columnspan=2)
-
-    def grille_aleatoire(self):
-        """
-        Affiche dans la partie droite de la fenêtre les actions possibles sur une grille générée aléatoirement :
-        la modifier ou lancer l'algorithme
-        """
-        self.clean()
-        # Création des boutons nécessaires
-        bouton_modifier_grille = Button(self, text="Modifier la grille", command=self.parent.modifier_grille)
-        bouton_lancement = Button(self,
-                                  text="Lancer l'algorithme sur cette grille",
-                                  command=lambda: self.parent.lancer_grille(0))
-
-        # Placement des éléments dans la "frame"
-        bouton_modifier_grille.grid(column=0, row=0)
-        bouton_lancement.grid(column=1, row=0)
+        bouton_valide.grid(column=1, row=5, columnspan=2)
 
     def modifier_grille(self):
         """
@@ -443,11 +430,19 @@ class RightFrame(Frame):
         """
         self.clean()
         label = Label(self, text="Quelles statistiques voulez-vous lancer ?")
-        btn_taille = Button(self, text="En fonction de la taille de la grille", command=self.stats_taille)
-        btn_obstacles = Button(self, text="En fonction du nombre d'obstacles", command=self.stats_obstacles)
+        btn_taille = Button(self, text="En fonction de la taille de la grille\nsur des instances aléatoires",
+                            command=self.stats_taille)
+        btn_obstacles = Button(self, text="En fonction du nombre d'obstacles\nsur des instances aléatoires",
+                               command=self.stats_obstacles)
+        btn_creer_instances = Button(self, text="Créer un fichier qui servira\nde base de données de référence",
+                                     command=self.stats_creer_instances)
+        btn_lancer_instance = Button(self, text="Lancer un statistiques sur\nun fichier créé préalablement",
+                                     command=self.stats_ouvrir_instances)
         label.grid(column=0, row=0)
         btn_taille.grid(column=0, row=1)
         btn_obstacles.grid(column=0, row=2)
+        btn_creer_instances.grid(column=0, row=3)
+        btn_lancer_instance.grid(column=0, row=4)
 
     def stats_taille(self):
         """
@@ -550,6 +545,215 @@ class RightFrame(Frame):
         radio_linear_abs.grid(column=1, row=5)
         radio_log_abs.grid(column=2, row=5)
         btn_lancement.grid(column=1, row=6)
+
+    def stats_creer_instances(self):
+        """
+        Demande à l'utilisateur quel type de base de données il veut créer :
+        en fonction de la taille ou du nombre d'obstacles
+        """
+        self.clean()
+        label = Label(self, text="Voulez-vous créer des instances pour des statistiques en fonction de :")
+        btn_taille = Button(self, text="La taille", command=self.stats_creer_instances_taille)
+        btn_obstacles = Button(self, text="Le nombre d'obstacles", command=self.stats_creer_instances_obstacles)
+
+        label.grid(column=0, row=0, columnspan=2)
+        btn_taille.grid(column=0, row=1)
+        btn_obstacles.grid(column=1, row=1)
+
+    def stats_creer_instances_taille(self):
+        """
+        Demande à l'utilisateur les informations nécessaires pour créer les instances demandées pour les statistiques
+        en fonction de la taille de la grille
+        """
+        self.clean()
+        # Définitions des variables nécessaires
+        taille_min = IntVar()
+        taille_max = IntVar()
+        pas = IntVar()
+        nb_instances = IntVar()
+        taille_min.set(10)
+        taille_max.set(50)
+        pas.set(10)
+        nb_instances.set(10)
+        # Définition des widgets à afficher
+        label_min = Label(self, text="Taille minimale des grilles :")
+        label_max = Label(self, text="Taille maximale des grilles :")
+        label_pas = Label(self, text="Pas entre deux tailles de grilles :")
+        label_nb_instances = Label(self, text="Nombre d'instances par taille à générer :")
+        spin_min = Spinbox(self, from_=10, to=200, textvariable=taille_min)
+        spin_max = Spinbox(self, from_=20, to=500, textvariable=taille_max)
+        spin_pas = Spinbox(self, from_=10, to=500, textvariable=pas)
+        spin_nb_instances = Spinbox(self, from_=10, to=100, textvariable=nb_instances)
+        label = Label(self, text="Dans quel fichier voulez-vous écrire ces instances ?")
+        entry = Entry(self, textvariable=self.parent.sortie)
+        bouton = Button(self, text="Choisir parmi les fichiers",
+                        command=lambda: self.parent.sortie.set(choisir_fichier("Choisir le fichier où écrire")))
+        btn_lancement = Button(self, text="Générer la base de données",
+                               command=lambda: self.stats_generer_instances_taille(spin_min.get(), spin_max.get(), spin_pas.get(), spin_nb_instances.get(), self.parent.sortie.get()))
+        # Placement des widgets à afficher
+        label_min.grid(column=0, row=0, columnspan=2)
+        spin_min.grid(column=2, row=0)
+        label_max.grid(column=0, row=1, columnspan=2)
+        spin_max.grid(column=2, row=1)
+        label_pas.grid(column=0, row=2, columnspan=2)
+        spin_pas.grid(column=2, row=2)
+        label_nb_instances.grid(column=0, row=3, columnspan=2)
+        spin_nb_instances.grid(column=2, row=3)
+        label.grid(column=0, row=4, columnspan=3)
+        entry.grid(column=0, row=5, columnspan=2)
+        bouton.grid(column=2, row=5)
+        btn_lancement.grid(column=0, row=6, columnspan=3)
+
+    def stats_generer_instances_taille(self, min_taille, max_taille, pas, nb_instances, fichier):
+        grilles = generer_base_statistiques_taille(int(min_taille), int(max_taille), int(pas), int(nb_instances))
+        print(grilles)
+        ecriture_grilles(grilles, fichier)
+        self.clean()
+        label = Label(self, text="Instances générées et écrites dans le fichier")
+        label.grid()
+
+    def stats_creer_instances_obstacles(self):
+        """
+        Demande à l'utilisateur les informations nécessaires pour créer les instances demandées pour les statistiques
+        en fonction du nombre d'obstacles des grilles
+        """
+        self.clean()
+        # Définitions des variables nécessaires
+        taille = IntVar()
+        min_obstacles = IntVar()
+        max_obstacles = IntVar()
+        pas = IntVar()
+        nb_instances = IntVar()
+        taille.set(20)
+        min_obstacles.set(20)
+        max_obstacles.set(240)
+        pas.set(10)
+        nb_instances.set(10)
+        # Définition des widgets à afficher
+        label_taille = Label(self, text="Taille des instances générées :")
+        label_min = Label(self, text="Nombre minimal d'obstacles :")
+        label_max = Label(self, text="Nombre maximal d'obstacles :")
+        label_pas = Label(self, text="Pas entre deux nombres d'obstacles :")
+        label_nb_instances = Label(self, text="Nombre d'instances par nombre d'obstacles à générer :")
+        spin_taille = Spinbox(self, from_=10, to=500, textvariable=taille)
+        spin_min = Spinbox(self, from_=10, to=200, textvariable=min_obstacles)
+        spin_max = Spinbox(self, from_=20, to=500, textvariable=max_obstacles)
+        spin_pas = Spinbox(self, from_=10, to=500, textvariable=pas)
+        spin_nb_instances = Spinbox(self, from_=10, to=100, textvariable=nb_instances)
+        label = Label(self, text="Dans quel fichier voulez-vous écrire ces instances ?")
+        entry = Entry(self, textvariable=self.parent.sortie)
+        bouton = Button(self, text="Choisir parmi les fichiers",
+                        command=lambda: self.parent.sortie.set(choisir_fichier("Choisir le fichier où écrire")))
+        btn_lancement = Button(self, text="Générer la base de données",
+                               command=lambda: self.stats_generer_instances_obstacles(taille.get(), min_obstacles.get(), max_obstacles.get(), pas.get(), nb_instances.get(), self.parent.sortie.get()))
+        # Placement des widgets à afficher
+        label_taille.grid(column=0, row=0, columnspan=2)
+        spin_taille.grid(column=2, row=0)
+        label_min.grid(column=0, row=1, columnspan=2)
+        spin_min.grid(column=2, row=1)
+        label_max.grid(column=0, row=2, columnspan=2)
+        spin_max.grid(column=2, row=2)
+        label_pas.grid(column=0, row=3, columnspan=2)
+        spin_pas.grid(column=2, row=3)
+        label_nb_instances.grid(column=0, row=4, columnspan=2)
+        spin_nb_instances.grid(column=2, row=4)
+        label.grid(column=0, row=5, columnspan=3)
+        entry.grid(column=0, row=6, columnspan=2)
+        bouton.grid(column=2, row=6)
+        btn_lancement.grid(column=0, row=7, columnspan=3)
+
+    def stats_generer_instances_obstacles(self, taille, min_obstacles, max_obstacles, pas, nb_instances, fichier):
+        grilles = generer_base_statistiques_obstacles(int(taille), int(min_obstacles), int(max_obstacles),
+                                                      int(pas), int(nb_instances))
+        ecriture_grilles(grilles, fichier)
+        self.clean()
+        label = Label(self, text="Instances générées et écrites dans le fichier")
+        label.grid()
+
+    def stats_ouvrir_instances(self):
+        """
+        Demande à l'utilisateur quelle base de données il veut ouvrir, et de quel type elle est
+        :return:
+        """
+        self.clean()
+        # Définition des variables
+        type_stats = StringVar()
+        type_stats.set("taille")
+        # Définition des widgets à afficher
+        label = Label(self, text="Quel fichier ouvrir ?")
+        entry = Entry(self, textvariable=self.parent.entree)
+        bouton = Button(self, text="Choisir parmi les fichiers",
+                        command=lambda: self.parent.entree.set(choisir_fichier("Choisir le fichier à ouvrir")))
+        label_type = Label(self, text="Quel est le type de statistiques à réaliser sur les instances de ce fichier ?")
+        radio_taille = Radiobutton(self, text="En fonction de la taille", variable=type_stats, value="taille")
+        radio_obstacles = Radiobutton(self, text="En fonction du nombre d'obstacles",
+                                      variable=type_stats, value="obstacles")
+        btn_lancement = Button(self, text="Lancer le calcul !",
+                               command=lambda: self.stats_affiche_base_donnees(self.parent.entree.get(), type_stats.get()))
+        # Placement des widgets
+        label.grid(column=0, row=0, columnspan=4)
+        entry.grid(column=0, row=1, columnspan=3)
+        bouton.grid(column=3, row=1)
+        label_type.grid(column=0, row=2, columnspan=4)
+        radio_taille.grid(column=0, row=3, columnspan=2)
+        radio_obstacles.grid(column=2, row=3, columnspan=2)
+        btn_lancement.grid(column=0, row=4, columnspan=4)
+
+    def stats_affiche_base_donnees(self, fichier, type):
+        if type == "taille":
+            self.parent.lancer_stats_base_donnees_taille(fichier)
+        else:
+            self.parent.lancer_stats_base_donnees_obstacles(fichier)
+
+    def stats_demande_echelle_taille(self, tailles, tps_creation, tps_calcul):
+        self.clean()
+        echelle_ord = StringVar()
+        echelle_abs = StringVar()
+        echelle_ord.set("log")
+        echelle_abs.set("log")
+        label = Label(self, text="Changer l'échelle du graphique ?")
+        label_ord = Label(self, text="Axe des ordonnées :")
+        label_abs = Label(self, text="Axe des abscisses :")
+        radio_ord_lin = Radiobutton(self, text="Linéaire", variable=echelle_ord, value="linear")
+        radio_ord_log = Radiobutton(self, text="Logarithmique", variable=echelle_ord, value="log")
+        radio_abs_lin = Radiobutton(self, text="Linéaire", variable=echelle_abs, value="linear")
+        radio_abs_log = Radiobutton(self, text="Logarithmique", variable=echelle_abs, value="log")
+        btn_valider = Button(self, text="Mettre à jour le graphique",
+                             command=lambda: self.parent.afficher_stats_base_donnees_taille(tailles, tps_creation, tps_calcul, echelle_ord.get(), echelle_abs.get()))
+
+        label.grid(column=0, row=0, columnspan=2)
+        label_ord.grid(column=0, row=1, columnspan=2)
+        radio_ord_lin.grid(column=0, row=2)
+        radio_ord_log.grid(column=1, row=2)
+        label_abs.grid(column=0, row=3, columnspan=2)
+        radio_abs_lin.grid(column=0, row=4)
+        radio_abs_log.grid(column=1, row=4)
+        btn_valider.grid(column=0, row=5, columnspan=2)
+
+    def stats_demande_echelle_obstacles(self, taille, nb_obstacles, tps_creation, tps_calcul):
+        self.clean()
+        echelle_ord = StringVar()
+        echelle_abs = StringVar()
+        echelle_ord.set("log")
+        echelle_abs.set("log")
+        label = Label(self, text="Changer l'échelle du graphique ?")
+        label_ord = Label(self, text="Axe des ordonnées :")
+        label_abs = Label(self, text="Axe des abscisses :")
+        radio_ord_lin = Radiobutton(self, text="Linéaire", variable=echelle_ord, value="linear")
+        radio_ord_log = Radiobutton(self, text="Logarithmique", variable=echelle_ord, value="log")
+        radio_abs_lin = Radiobutton(self, text="Linéaire", variable=echelle_abs, value="linear")
+        radio_abs_log = Radiobutton(self, text="Logarithmique", variable=echelle_abs, value="log")
+        btn_valider = Button(self, text="Mettre à jour le graphique",
+                             command=lambda: self.parent.afficher_stats_base_donnees_obstacles(taille, nb_obstacles, tps_creation, tps_calcul, echelle_ord.get(), echelle_abs.get()))
+
+        label.grid(column=0, row=0, columnspan=2)
+        label_ord.grid(column=0, row=1, columnspan=2)
+        radio_ord_lin.grid(column=0, row=2)
+        radio_ord_log.grid(column=1, row=2)
+        label_abs.grid(column=0, row=3, columnspan=2)
+        radio_abs_lin.grid(column=0, row=4)
+        radio_abs_log.grid(column=1, row=4)
+        btn_valider.grid(column=0, row=5, columnspan=2)
 
 
 class BoutonMenuPrincipal(Frame):
@@ -666,24 +870,13 @@ class FenetrePrincipale(Tk):
         """
         Génère une grille avec les données récupérées par la frame droite et l'affiche
         """
-        # On vérifie d'abord que le mode de création est bien valide,
-        # sinon c'est que l'utilisateur n'a pas rentré les données nécessaires et on ne peut rien générer
-        if self.rightFrame.mode_creation is not None:
-            # Génération d'une grille alétoire
-            if self.rightFrame.mode_creation.get() == '1':
-                self.grilles = [generer_grille(self.rightFrame.nb_lignes.get(),
-                                               self.rightFrame.nb_colonnes.get(),
-                                               self.rightFrame.nb_obstacles.get())]
-                self.leftFrame.affiche_grille(self.grilles[0])
-                self.leftFrame.rescale()
-                self.rightFrame.grille_aleatoire()
-            # Génération d'une grille vide, à l'utilisateur de la modifier par lui-même
-            if self.rightFrame.mode_creation.get() == '2':
-                lignes = [['0' for i in range(self.rightFrame.nb_colonnes.get())] for j in range(self.rightFrame.nb_lignes.get())]
-                ligne = ['0', '0', str(self.rightFrame.nb_lignes.get()), str(self.rightFrame.nb_colonnes.get()), "sud"]
-                self.grilles = [[(self.rightFrame.nb_lignes.get(), self.rightFrame.nb_colonnes.get()), lignes, ligne]]
-                self.afficher_grille(0)
-                self.modifier_grille()
+        # Génération d'une grille aléatoire
+        self.grilles = [generer_grille(self.rightFrame.nb_lignes.get(),
+                                       self.rightFrame.nb_colonnes.get(),
+                                       self.rightFrame.nb_obstacles.get())]
+        self.leftFrame.affiche_grille(self.grilles[0])
+        self.leftFrame.rescale()
+        self.modifier_grille()
 
     def lancer_statistiques(self):
         """
@@ -702,7 +895,8 @@ class FenetrePrincipale(Tk):
         :type min_taille: str
         :type max_taille: str
         :type pas: str
-        :type echelle: str
+        :type echelle_ord: str
+        :type echelle_abs: str
         """
         self.leftFrame.affiche_patienter()
         f = Figure()
@@ -733,6 +927,44 @@ class FenetrePrincipale(Tk):
         plt = f.add_subplot(111, title=titre, ylabel="Temps", xlabel="Nombre d'obstacles",
                             yscale=echelle_ord, xscale=echelle_abs)
         affiche_stats_obstacles(int(taille_grille), int(max_obstacles), int(pas), plt)
+        self.leftFrame.affiche_plot(f)
+
+    def lancer_stats_base_donnees_taille(self, fichier):
+        """
+        Lance le calcul puis demande l'affichage des statistiques depuis un fichier base de données
+        :param fichier: chemin du fichier base de données dont on veut les statistiques
+        :type fichier: str
+        """
+        self.leftFrame.affiche_patienter()
+        tailles, tps_creation, tps_calcul = recup_stats_fichier_taille(fichier)
+        self.afficher_stats_base_donnees_taille(tailles, tps_creation, tps_calcul)
+        self.rightFrame.stats_demande_echelle_taille(tailles, tps_creation, tps_calcul)
+
+    def afficher_stats_base_donnees_taille(self, tailles, tps_creation, tps_calcul, echelle_ord='linear', echelle_abs='linear'):
+        f = Figure()
+        titre = "Temps d'exécution en fonction de\nla taille d'un côté de la grille"
+        plt = f.add_subplot(111, title=titre, ylabel="Temps", xlabel="Taille de la grille",
+                            yscale=echelle_ord, xscale=echelle_abs)
+        affiche_stats_fichier(tailles, tps_creation, tps_calcul, plt)
+        self.leftFrame.affiche_plot(f)
+
+    def lancer_stats_base_donnees_obstacles(self, fichier):
+        """
+        Lance le calcul puis demande l'affichage des statistiques depuis un fichier base de données
+        :param fichier: chemin du fichier base de données dont on veut les statistiques
+        :type fichier: str
+        """
+        self.leftFrame.affiche_patienter()
+        taille, nb_obstacles, tps_creation, tps_calcul = recup_stats_fichier_obstacles(fichier)
+        self.afficher_stats_base_donnees_obstacles(taille, nb_obstacles, tps_creation, tps_calcul)
+        self.rightFrame.stats_demande_echelle_obstacles(taille, nb_obstacles, tps_creation, tps_calcul)
+
+    def afficher_stats_base_donnees_obstacles(self, taille, nb_obstacles, tps_creation, tps_calcul, echelle_ord='linear', echelle_abs='linear'):
+        f = Figure()
+        titre = "Temps d'exécution d'une grille de " + str(taille) + " de côté\nen fonction du nombre d'obstacles"
+        plt = f.add_subplot(111, title=titre, ylabel="Temps", xlabel="Nombre d'obstacles",
+                            yscale=echelle_ord, xscale=echelle_abs)
+        affiche_stats_fichier(nb_obstacles, tps_creation, tps_calcul, plt)
         self.leftFrame.affiche_plot(f)
 
 

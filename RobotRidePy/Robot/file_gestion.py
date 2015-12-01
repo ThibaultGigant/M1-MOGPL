@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from Robot.classes import *
 import time
 
@@ -103,7 +104,7 @@ def lancement_et_chemin(grille):
     return robots[0].coordonnees_chemin()
 
 
-def ecriture(chemins, fichier_sortie):
+def ecriture_chemins(chemins, fichier_sortie):
     """
     Ecrit le chemin passé en paramètre dans le fichier de sortie passé en paramètre
     :param chemins: liste de chaînes de caractères donnant les plus courts chemins d'un robot dans certaines grilles
@@ -131,5 +132,27 @@ def lecture(fichier_entree, fichier_sortie):
     robots, temps_creation = creation_robots(grilles)
     chemins, temps_calcul = lancement_depuis_robots(robots)
 
-    ecriture(chemins, fichier_sortie)
+    ecriture_chemins(chemins, fichier_sortie)
     return chemins, temps_creation, temps_calcul
+
+
+def ecriture_grilles(grilles, fichier_sortie):
+    """
+    Ecrit dans le fichier dont le chemin <fichier_sortie> est passé en paramètres les grilles contenues dans <grilles>
+    :param grilles: liste de grilles à écrire dans le fichier
+    :param fichier_sortie: chemin du fichier où écrire les grilles
+    :type grilles: list
+    :type fichier_sortie: str
+    """
+    fp = open(fichier_sortie, "w")
+    # Ecriture de chaque grille
+    for grille in grilles:
+        # Ajout de la première ligne avec le nombre de lignes et colonnes
+        fp.write(str(grille[0][0]) + " " + str(grille[0][1]) + "\n")
+        for i in grille[1]:  # Ajout de chaque ligne du dépôt
+            fp.write(" ".join(i) + "\n")
+        fp.write(" ".join(grille[2]) + "\n")
+        if grille != grilles[-1]:
+            fp.write("\n")
+        else:
+            fp.write("0 0")

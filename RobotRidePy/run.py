@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from Interface.ihm import affichage_fenetre
 from Robot.file_gestion import lecture
 import os

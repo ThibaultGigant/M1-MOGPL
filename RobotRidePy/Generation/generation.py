@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from random import randint, choice
 
 # Cette liste sert pour la génération du point de départ,
@@ -150,3 +151,49 @@ def creer_instances(fichier, nb_instances=1, nb_lignes=None, nb_colonnes=None, n
             fp.write("\n")
     fp.write("0 0")
     fp.close()
+
+
+def generer_base_statistiques_taille(min_taille, max_taille, pas, nb_instances):
+    """
+    Génère <nb_instances> grilles pour chaque taille de grille entre <min_taille> et <max_taille>
+    et cela toutes les <pas> unités de tailles de grille
+    :param min_taille: nombre minimal d'unité de taille d'un côté de la grille dans les instances générées
+    :param max_taille: nombre maximal d'unité de taille d'un côté de la grille dans les instances générées
+    :param pas: nombre d'unités de taille entre deux catégories d'instances
+    :param nb_instances: nombre d'instances par catégorie d'instances
+    :type min_taille: int
+    :type max_taille: int
+    :type pas: int
+    :type nb_instances: int
+    :return: grilles générées aléatoirement
+    :rtype: list
+    """
+    grilles = []
+    for taille in range(min_taille, max_taille+1, pas):
+        for i in range(nb_instances):
+            grilles.append(generer_grille(taille, taille, taille))
+    return grilles
+
+
+def generer_base_statistiques_obstacles(taille, min_obstacles, max_obstacles, pas, nb_instances):
+    """
+    Génère <nb_instances> grilles de taille <taille> pour chaque quantité d'obstacles entre <min_obstacles> et
+    <max_obstacles> et cela tous les <pas> nombre d'obstacles
+    :param taille: taille d'un côté des grilles générées
+    :param min_obstacles: nombre minimal d'obstacles dans les grilles
+    :param max_obstacles: nombre maximal d'obstacles dans les grilles
+    :param pas: pas entre deux nombres d'obstacles entre deux catégories
+    :param nb_instances: nombre d'instances de chaque catégorie à générer
+    :type taille: int
+    :type min_obstacles: int
+    :type max_obstacles: int
+    :type pas: int
+    :type nb_instances: int
+    :return: grilles générées aléatoirement
+    :rtype: list
+    """
+    grilles = []
+    for nb_obstacles in range(min_obstacles, max_obstacles+1, pas):
+        for i in range(nb_instances):
+            grilles.append(generer_grille(taille, taille, nb_obstacles))
+    return grilles
