@@ -191,7 +191,8 @@ class LeftFrame(Frame):
         """
         # Récupération du rectangle sur lequel on a cliqué
         w = event.widget.find_closest(event.x, event.y)
-        ligne = (w[0]-1)//self.nb_lignes
+        print(w)
+        ligne = (w[0]-1)//self.nb_colonnes
         colonne = (w[0]-1) % self.nb_colonnes
         # Changement de la grille elle-même en changeant la case correspondante,
         # et changement de la couleur du rectangle
@@ -321,6 +322,13 @@ class RightFrame(Frame):
                                   command=lambda: self.parent.lancer_grille(combo_liste.index(combo.get())))
         bouton_affichage.grid(column=0, row=7, columnspan=2)
         bouton_lancement.grid(column=2, row=7, columnspan=2)
+        bouton_modification = Button(self, text="Modificer cette grille",
+                                     command=lambda: self.modification_grille_ouverte(combo_liste.index(combo.get())))
+        bouton_modification.grid(column=0, row=8, columnspan=4)
+
+    def modification_grille_ouverte(self, numero_grille):
+        self.parent.grilles[0] = self.parent.grilles[numero_grille]
+        self.parent.modifier_grille()
 
     def creer_grille(self):
         """
@@ -383,6 +391,8 @@ class RightFrame(Frame):
                             text="Mettre à jour",
                             command=lambda: self.maj_depart_arrivee(abscisse_depart.get(), ordonnee_depart.get(), abscisse_arrivee.get(), ordonnee_arrivee.get(), orientation.get()))
         bouton_lancement = Button(self, text="Lancer sur cette grille", command=self.lancement_modifie)
+        bouton_enregistrement = Button(self, text="Enregistrer cette grille dans un fichier",
+                                       command= lambda: self.parent.enregistrer_grille(0))
 
         # Positionnement de ces éléments dans la "frame"
         label_depart.grid(column=0, row=0, columnspan=2)
@@ -395,6 +405,7 @@ class RightFrame(Frame):
         spin_ordonnee_arrivee.grid(column=1, row=5)
         bouton_maj.grid(column=0, row=6)
         bouton_lancement.grid(column=1, row=6)
+        bouton_enregistrement.grid(column=0, row=7, columnspan=2)
 
     def maj_depart_arrivee(self, abs_dep, ord_dep, abs_arr, ord_arr, orientation):
         """
@@ -755,6 +766,21 @@ class RightFrame(Frame):
         radio_abs_log.grid(column=1, row=4)
         btn_valider.grid(column=0, row=5, columnspan=2)
 
+    def enregistrer_grille(self, numero_grille):
+        self.clean()
+
+        label = Label(self, text="Dans quel fichier voulez-vous enregistrer cette grille ?")
+        entry = Entry(self, textvariable=self.parent.sortie)
+        bouton = Button(self, text="Choisir parmi les fichiers",
+                        command=lambda: self.parent.entree.set(choisir_fichier("Choisir le fichier où écrire la grille")))
+        btn_lancement = Button(self, text="Lancer l'écriture",
+                               command=lambda: self.parent.ecrire_grille(numero_grille))
+        label.grid(column=0, row=0, columnspan=3)
+        entry.grid(column=0, row=1, columnspan=2)
+        bouton.grid(column=2, row=1)
+        btn_lancement.grid(column=0, row=2, columnspan=3)
+
+
 
 class BoutonMenuPrincipal(Frame):
     """
@@ -966,6 +992,15 @@ class FenetrePrincipale(Tk):
                             yscale=echelle_ord, xscale=echelle_abs)
         affiche_stats_fichier(nb_obstacles, tps_creation, tps_calcul, plt)
         self.leftFrame.affiche_plot(f)
+
+    def enregistrer_grille(self, numero_grille):
+        self.rightFrame.enregistrer_grille(numero_grille)
+
+    def ecrire_grille(self, numero_grille):
+        ecriture_grilles([self.grilles[numero_grille]], self.sortie.get())
+        self.rightFrame.clean()
+        label = Label(self.rightFrame, text="Grille écrite dans le fichier")
+        label.grid()
 
 
 # Méthodes en dehors des classes

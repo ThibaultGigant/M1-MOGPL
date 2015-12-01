@@ -156,3 +156,4 @@ def ecriture_grilles(grilles, fichier_sortie):
             fp.write("\n")
         else:
             fp.write("0 0")
+    fp.close()
